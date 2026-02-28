@@ -11,7 +11,7 @@ Prelegal is a legal document platform that helps users create, preview, and down
 A dataset of 12 open-source legal agreement templates sourced from [Common Paper](https://commonpaper.com), created by a committee of 40+ attorneys. Licensed under CC BY 4.0.
 
 | Template | File |
-|---|---|
+| --- | --- |
 | Mutual NDA Cover Page | `Mutual-NDA-coverpage.md` |
 | Mutual NDA | `Mutual-NDA.md` |
 | Cloud Service Agreement (CSA) | `CSA.md` |
@@ -36,7 +36,7 @@ A full-stack prototype web app (PL-3) for generating a Mutual NDA:
 ## Stack
 
 | Layer | Technology |
-|---|---|
+| --- | --- |
 | Frontend | Next.js 16 + TypeScript + shadcn/ui |
 | API layer | tRPC v11 + TanStack Query |
 | State | Zustand |
@@ -47,6 +47,7 @@ A full-stack prototype web app (PL-3) for generating a Mutual NDA:
 ## Running locally
 
 **Backend:**
+
 ```bash
 cd backend
 uv sync
@@ -56,6 +57,7 @@ uv run uvicorn app.main:app --reload
 ```
 
 **Frontend:**
+
 ```bash
 cd frontend
 bun install
