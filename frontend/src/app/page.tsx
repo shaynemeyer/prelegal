@@ -1,4 +1,4 @@
-import { NdaForm } from "@/components/nda/NdaForm";
+import { NdaPageTabs } from "@/components/NdaPageTabs";
 import { AuthGuard } from "@/components/AuthGuard";
 
 export default function HomePage() {
@@ -8,10 +8,10 @@ export default function HomePage() {
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Mutual NDA Creator</h2>
           <p className="text-muted-foreground mt-1">
-            Fill in the details below to generate a Mutual Non-Disclosure Agreement.
+            Fill in the form or chat with AI to generate a Mutual Non-Disclosure Agreement.
           </p>
         </div>
-        <NdaForm />
+        <NdaPageTabs />
       </div>
     </AuthGuard>
   );

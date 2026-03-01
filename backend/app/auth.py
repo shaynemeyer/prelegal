@@ -1,9 +1,23 @@
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt  # noqa: F401  (re-exported for callers)
 
 from app.config import JWT_ALGORITHM, JWT_EXPIRY_HOURS, JWT_SECRET_KEY
+
+_bearer = HTTPBearer()
+
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(_bearer),
+) -> dict:
+    """Validate Bearer JWT, return decoded payload."""
+    try:
+        return decode_access_token(credentials.credentials)
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
 
 
 def hash_password(password: str) -> str:

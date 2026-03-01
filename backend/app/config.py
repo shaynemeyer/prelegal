@@ -10,3 +10,4 @@ DATABASE_PATH = os.getenv("DATABASE_PATH", "/data/prelegal.db")
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-me-in-production")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_HOURS = 24
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
