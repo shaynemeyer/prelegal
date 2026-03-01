@@ -34,13 +34,43 @@ async def test_chat_returns_message_and_fields(client):
     with patch("app.routes.chat.call_ai", return_value=mock_result):
         res = await client.post(
             "/api/chat",
-            json={"messages": [{"role": "user", "content": "Hello"}]},
+            json={"messages": [{"role": "user", "content": "Hello"}], "doc_type": "mutual-nda"},
             headers={"Authorization": f"Bearer {token}"},
         )
     assert res.status_code == 200
     data = res.json()
     assert data["message"] == "Hello! What is the purpose of this NDA?"
     assert data["fields"]["governingLaw"] == "Delaware"
+
+
+@pytest.mark.asyncio
+async def test_chat_passes_doc_type_to_call_ai(client):
+    token = await _get_token(client)
+    mock_result = {"message": "Hi there!", "fields": {}}
+    with patch("app.routes.chat.call_ai", return_value=mock_result) as mock_ai:
+        await client.post(
+            "/api/chat",
+            json={"messages": [{"role": "user", "content": "Hello"}], "doc_type": "csa"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    mock_ai.assert_called_once()
+    _, kwargs = mock_ai.call_args
+    assert kwargs.get("doc_type") == "csa"
+
+
+@pytest.mark.asyncio
+async def test_chat_defaults_to_mutual_nda_doc_type(client):
+    token = await _get_token(client)
+    mock_result = {"message": "Hi there!", "fields": {}}
+    with patch("app.routes.chat.call_ai", return_value=mock_result) as mock_ai:
+        await client.post(
+            "/api/chat",
+            json={"messages": []},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    mock_ai.assert_called_once()
+    _, kwargs = mock_ai.call_args
+    assert kwargs.get("doc_type") == "mutual-nda"
 
 
 @pytest.mark.asyncio

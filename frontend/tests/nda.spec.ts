@@ -11,6 +11,12 @@ async function signUp(page: import("@playwright/test").Page) {
   await expect(page).toHaveURL("/");
 }
 
+async function goToNda(page: import("@playwright/test").Page) {
+  await signUp(page);
+  await page.getByRole("button", { name: "Mutual NDA" }).click();
+  await expect(page.getByRole("tab", { name: "Fill in Form" })).toBeVisible();
+}
+
 async function fillNdaForm(page: import("@playwright/test").Page) {
   // Agreement fields
   await page.getByLabel("Purpose").fill("Exploring a potential partnership");
@@ -33,20 +39,32 @@ async function fillNdaForm(page: import("@playwright/test").Page) {
 }
 
 test.describe("NDA form", () => {
-  test("authenticated user sees NDA form on home page", async ({ page }) => {
+  test("authenticated user sees document selector on home page", async ({ page }) => {
     await signUp(page);
-    await expect(page.getByRole("heading", { name: "Mutual NDA Creator" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Create a Legal Document" })).toBeVisible();
+  });
+
+  test("clicking Mutual NDA shows form and chat tabs", async ({ page }) => {
+    await goToNda(page);
+    await expect(page.getByRole("tab", { name: "Fill in Form" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Chat with AI" })).toBeVisible();
+  });
+
+  test("back button returns to document selector", async ({ page }) => {
+    await goToNda(page);
+    await page.getByRole("button", { name: /← Back/i }).click();
+    await expect(page.getByRole("heading", { name: "Create a Legal Document" })).toBeVisible();
   });
 
   test("form has required fields", async ({ page }) => {
-    await signUp(page);
+    await goToNda(page);
     await expect(page.getByLabel("Purpose")).toBeVisible();
     await expect(page.getByLabel("Governing Law (State)")).toBeVisible();
     await expect(page.getByLabel("Jurisdiction")).toBeVisible();
   });
 
   test("submitting completed form navigates to preview", async ({ page }) => {
-    await signUp(page);
+    await goToNda(page);
     await fillNdaForm(page);
     await page.getByRole("button", { name: "Preview NDA →" }).click();
     await expect(page).toHaveURL("/preview");
@@ -54,7 +72,7 @@ test.describe("NDA form", () => {
   });
 
   test("preview page shows NDA document", async ({ page }) => {
-    await signUp(page);
+    await goToNda(page);
     await fillNdaForm(page);
     await page.getByRole("button", { name: "Preview NDA →" }).click();
     await expect(page).toHaveURL("/preview");
@@ -62,7 +80,7 @@ test.describe("NDA form", () => {
   });
 
   test("edit button on preview returns to form", async ({ page }) => {
-    await signUp(page);
+    await goToNda(page);
     await fillNdaForm(page);
     await page.getByRole("button", { name: "Preview NDA →" }).click();
     await expect(page).toHaveURL("/preview");
@@ -71,7 +89,7 @@ test.describe("NDA form", () => {
   });
 
   test("download PDF button is visible on preview", async ({ page }) => {
-    await signUp(page);
+    await goToNda(page);
     await fillNdaForm(page);
     await page.getByRole("button", { name: "Preview NDA →" }).click();
     await expect(page).toHaveURL("/preview");
@@ -79,7 +97,7 @@ test.describe("NDA form", () => {
   });
 
   test("submitting without required fields shows validation errors", async ({ page }) => {
-    await signUp(page);
+    await goToNda(page);
     // Governing Law and Jurisdiction are empty by default; party fields too.
     await page.getByRole("button", { name: "Preview NDA →" }).click();
     await expect(page.getByText("Governing law (state) is required")).toBeVisible();
@@ -88,7 +106,7 @@ test.describe("NDA form", () => {
   });
 
   test("preview table shows entered party data", async ({ page }) => {
-    await signUp(page);
+    await goToNda(page);
     await fillNdaForm(page);
     await page.getByRole("button", { name: "Preview NDA →" }).click();
     await expect(page).toHaveURL("/preview");
