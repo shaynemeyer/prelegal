@@ -30,7 +30,7 @@ A dataset of 12 open-source legal agreement templates sourced from [Common Paper
 A full-stack web app for generating a Mutual NDA:
 
 1. **Sign up / sign in** — JWT-authenticated accounts
-2. **Fill in a form** — purpose, dates, MNDA term, confidentiality, governing law, jurisdiction, and both parties' details
+2. **Fill in a form or chat with AI** — choose between a structured form or a freeform AI chat that asks questions and auto-fills the fields
 3. **Preview the completed NDA** — cover page with filled-in values and full standard terms with variables injected
 4. **Download as PDF** — letter-format PDF generated server-side
 
@@ -44,6 +44,7 @@ A full-stack web app for generating a Mutual NDA:
 | Backend        | FastAPI (Python) + uv               |
 | Database       | SQLite                              |
 | Auth           | JWT (python-jose + bcrypt)          |
+| AI             | OpenRouter (openai SDK)             |
 | PDF generation | WeasyPrint                          |
 | Deployment     | Single Docker container             |
 
@@ -110,10 +111,10 @@ bun dev
 
 ```bash
 # Backend (from backend/)
-uv run pytest --cov=app --cov-report=term-missing   # 92% coverage
+uv run pytest --cov=app --cov-report=term-missing   # 93% coverage
 
 # Frontend (from frontend/)
-bun playwright test                                  # 19 e2e tests
+bun playwright test                                  # 27 e2e tests
 ```
 
 See [`docs/test-coverage-report.md`](docs/test-coverage-report.md) for full coverage details and gap analysis.
@@ -123,8 +124,8 @@ See [`docs/test-coverage-report.md`](docs/test-coverage-report.md) for full cove
 - [x] Legal document template dataset (12 templates)
 - [x] V1 foundation: Docker, SQLite, JWT auth, start/stop scripts
 - [x] Mutual NDA creator (form → preview → PDF download)
-- [x] Backend tests (92% coverage) and frontend e2e tests (19 flows)
+- [x] AI chat for NDA drafting (freeform chat auto-fills the form)
+- [x] Backend tests (93% coverage) and frontend e2e tests (27 flows)
 - [ ] Additional document creators
-- [ ] AI chat for document drafting
 - [ ] Document persistence
 - [ ] Release
