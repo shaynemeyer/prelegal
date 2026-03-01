@@ -25,14 +25,16 @@ A dataset of 12 open-source legal agreement templates sourced from [Common Paper
 | Business Associate Agreement (BAA)    | `BAA.md`                        |
 | AI Addendum                           | `AI-Addendum.md`                |
 
-### Mutual NDA Creator (`frontend/` + `backend/`)
+### Legal Document Creator (`frontend/` + `backend/`)
 
-A full-stack web app for generating a Mutual NDA:
+A full-stack web app for generating legal documents from any supported template:
 
 1. **Sign up / sign in** — JWT-authenticated accounts
-2. **Fill in a form or chat with AI** — choose between a structured form or a freeform AI chat that asks questions and auto-fills the fields
-3. **Preview the completed NDA** — cover page with filled-in values and full standard terms with variables injected
-4. **Download as PDF** — letter-format PDF generated server-side
+2. **Select a document type** — choose from all 11 supported document types
+3. **Fill in a form or chat with AI** — every document type offers both a structured form (default) and an AI chat tab
+4. **Preview and download** — submitting the form shows a preview with the cover page and standard terms; download as PDF from the preview
+
+The AI assistant knows the fields required for each document type, always asks follow-up questions when more information is needed, and gracefully handles requests for unsupported document types by explaining alternatives.
 
 ## Stack
 
@@ -45,7 +47,7 @@ A full-stack web app for generating a Mutual NDA:
 | Database       | SQLite                              |
 | Auth           | JWT (python-jose + bcrypt)          |
 | AI             | OpenRouter (openai SDK)             |
-| PDF generation | WeasyPrint                          |
+| PDF generation | Playwright (headless Chromium)      |
 | Deployment     | Single Docker container             |
 
 ## Running
@@ -93,7 +95,8 @@ Run backend and frontend in separate terminals.
 ```bash
 cd backend
 uv sync
-DATABASE_PATH=./prelegal.db uv run uvicorn app.main:app --reload
+uv run playwright install chromium   # one-time: installs headless Chromium for PDF generation
+uv run uvicorn app.main:app --reload
 # Runs on http://localhost:8000
 ```
 
@@ -111,10 +114,10 @@ bun dev
 
 ```bash
 # Backend (from backend/)
-uv run pytest --cov=app --cov-report=term-missing   # 93% coverage
+uv run pytest --cov=app --cov-report=term-missing   # 99% coverage, 142 tests
 
 # Frontend (from frontend/)
-bun playwright test                                  # 27 e2e tests
+bun playwright test                                  # 41 e2e tests
 ```
 
 See [`docs/test-coverage-report.md`](docs/test-coverage-report.md) for full coverage details and gap analysis.
@@ -125,7 +128,7 @@ See [`docs/test-coverage-report.md`](docs/test-coverage-report.md) for full cove
 - [x] V1 foundation: Docker, SQLite, JWT auth, start/stop scripts
 - [x] Mutual NDA creator (form → preview → PDF download)
 - [x] AI chat for NDA drafting (freeform chat auto-fills the form)
-- [x] Backend tests (93% coverage) and frontend e2e tests (27 flows)
-- [ ] Additional document creators
+- [x] Backend tests (99% coverage, 142 tests) and frontend e2e tests (41 flows)
+- [x] All 11 document types supported via AI-guided chat + PDF generation
 - [ ] Document persistence
 - [ ] Release

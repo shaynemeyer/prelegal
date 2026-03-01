@@ -53,3 +53,10 @@ async def test_health(client):
     res = await client.get("/health")
     assert res.status_code == 200
     assert res.json()["status"] == "healthy"
+
+
+@pytest.mark.asyncio
+async def test_root_returns_api_message(client):
+    res = await client.get("/")
+    assert res.status_code == 200
+    assert res.json()["message"] == "Prelegal API"

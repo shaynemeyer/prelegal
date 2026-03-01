@@ -1,100 +1,62 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useNdaStore } from "@/store/useNdaStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { apiPost } from "@/lib/api";
-import type { NdaFormData } from "@/lib/schemas/nda";
 import type { ChatMessage, ChatResponse } from "@/types/chat";
 
-type PartialParty = Partial<NdaFormData["party1"]>;
-
-interface PartialNdaData {
-  purpose?: string;
-  effectiveDate?: string;
-  mndaTermType?: NdaFormData["mndaTermType"];
-  mndaTermYears?: number;
-  confidentialityType?: NdaFormData["confidentialityType"];
-  confidentialityYears?: number;
-  governingLaw?: string;
-  jurisdiction?: string;
-  modifications?: string;
-  party1?: PartialParty;
-  party2?: PartialParty;
+interface DocumentChatProps {
+  docType: string;
+  docName: string;
 }
 
-function isReadyForPreview(data: PartialNdaData): boolean {
-  const termYearsOk = data.mndaTermType !== "expires" || (data.mndaTermYears != null && data.mndaTermYears >= 1);
-  const confYearsOk =
-    data.confidentialityType !== "years" || (data.confidentialityYears != null && data.confidentialityYears >= 1);
-  return !!(
-    data.purpose &&
-    data.effectiveDate &&
-    data.mndaTermType &&
-    termYearsOk &&
-    data.confidentialityType &&
-    confYearsOk &&
-    data.governingLaw &&
-    data.jurisdiction &&
-    data.party1?.company &&
-    data.party2?.company
-  );
-}
+type PartialFields = Record<string, unknown>;
 
-function toNdaFormData(partial: PartialNdaData): NdaFormData {
-  const today = new Date().toISOString().split("T")[0];
-  return {
-    purpose: partial.purpose ?? "Evaluating whether to enter into a business relationship.",
-    effectiveDate: partial.effectiveDate ?? today,
-    mndaTermType: partial.mndaTermType ?? "expires",
-    mndaTermYears: partial.mndaTermYears ?? 1,
-    confidentialityType: partial.confidentialityType ?? "years",
-    confidentialityYears: partial.confidentialityYears ?? 1,
-    governingLaw: partial.governingLaw ?? "",
-    jurisdiction: partial.jurisdiction ?? "",
-    modifications: partial.modifications ?? "",
-    party1: {
-      printName: partial.party1?.printName ?? "",
-      title: partial.party1?.title ?? "",
-      company: partial.party1?.company ?? "",
-      noticeAddress: partial.party1?.noticeAddress ?? "",
-      date: partial.party1?.date ?? today,
-    },
-    party2: {
-      printName: partial.party2?.printName ?? "",
-      title: partial.party2?.title ?? "",
-      company: partial.party2?.company ?? "",
-      noticeAddress: partial.party2?.noticeAddress ?? "",
-      date: partial.party2?.date ?? today,
-    },
+function isReadyToGenerate(fields: PartialFields, docType: string): boolean {
+  // Determine party key names by doc type
+  const partyKeys: Record<string, [string, string]> = {
+    "csa": ["provider", "customer"],
+    "sla": ["provider", "customer"],
+    "design-partner": ["provider", "designPartner"],
+    "psa": ["provider", "customer"],
+    "dpa": ["controller", "processor"],
+    "partnership": ["partner1", "partner2"],
+    "software-license": ["provider", "customer"],
+    "pilot": ["provider", "customer"],
+    "baa": ["coveredEntity", "businessAssociate"],
+    "ai-addendum": ["provider", "customer"],
   };
+  const [key1, key2] = partyKeys[docType] ?? ["party1", "party2"];
+  const p1 = fields[key1] as Record<string, unknown> | undefined;
+  const p2 = fields[key2] as Record<string, unknown> | undefined;
+  return !!(p1?.company && p2?.company && fields.effectiveDate && fields.governingLaw);
 }
 
-function mergeFields(current: PartialNdaData, incoming: Record<string, unknown>): PartialNdaData {
+function mergeFields(current: PartialFields, incoming: Record<string, unknown>): PartialFields {
   const updated = { ...current };
   for (const [key, value] of Object.entries(incoming)) {
     if (value === null || value === undefined) continue;
-    if (key === "party1" || key === "party2") {
-      updated[key] = { ...(updated[key] ?? {}), ...(value as PartialParty) };
+    const existing = updated[key];
+    if (typeof value === "object" && !Array.isArray(value) && typeof existing === "object" && existing !== null) {
+      updated[key] = { ...(existing as Record<string, unknown>), ...(value as Record<string, unknown>) };
     } else {
-      (updated as Record<string, unknown>)[key] = value;
+      updated[key] = value;
     }
   }
   return updated;
 }
 
-export function NdaChat() {
-  const router = useRouter();
-  const setFormData = useNdaStore((s) => s.setFormData);
+export function DocumentChat({ docType, docName }: DocumentChatProps) {
   const token = useAuthStore((s) => s.token);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [ndaData, setNdaData] = useState<PartialNdaData>({});
+  const [fields, setFields] = useState<PartialFields>({});
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const greetedRef = useRef(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -103,24 +65,30 @@ export function NdaChat() {
     async (history: ChatMessage[], isGreeting = false) => {
       setLoading(true);
       try {
-        const res = await apiPost<ChatResponse>("/api/chat", { messages: history, doc_type: "mutual-nda" }, token);
+        const res = await apiPost<ChatResponse>(
+          "/api/chat",
+          { messages: history, doc_type: docType },
+          token
+        );
         const assistantMsg: ChatMessage = { role: "assistant", content: res.message };
         setMessages((prev) => (isGreeting ? [assistantMsg] : [...prev, assistantMsg]));
         if (res.fields && Object.keys(res.fields).length > 0) {
-          setNdaData((prev) => mergeFields(prev, res.fields));
+          setFields((prev) => mergeFields(prev, res.fields));
         }
       } catch {
-        const errorMsg: ChatMessage = { role: "assistant", content: "Something went wrong. Please try again." };
+        const errorMsg: ChatMessage = {
+          role: "assistant",
+          content: "Something went wrong. Please try again.",
+        };
         setMessages((prev) => (isGreeting ? [errorMsg] : [...prev, errorMsg]));
       } finally {
         setLoading(false);
         inputRef.current?.focus();
       }
     },
-    [token]
+    [token, docType]
   );
 
-  // Greet user on mount
   useEffect(() => {
     if (!greetedRef.current) {
       greetedRef.current = true;
@@ -142,12 +110,32 @@ export function NdaChat() {
     sendMessage(nextMessages);
   }
 
-  function handlePreview() {
-    setFormData(toNdaFormData(ndaData));
-    router.push("/preview");
+  async function handleDownload() {
+    setDownloading(true);
+    setDownloadError(null);
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
+      const res = await fetch(`${apiBase}/api/documents/generate-pdf`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ doc_type: docType, fields }),
+      });
+      if (!res.ok) throw new Error("PDF generation failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${docName.toLowerCase().replace(/\s+/g, "-")}.pdf`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+    } catch (e) {
+      setDownloadError(e instanceof Error ? e.message : "PDF generation failed");
+    } finally {
+      setDownloading(false);
+    }
   }
 
-  const ready = isReadyForPreview(ndaData);
+  const ready = isReadyToGenerate(fields, docType);
 
   return (
     <div className="flex flex-col h-[600px] border rounded-lg overflow-hidden">
@@ -175,6 +163,12 @@ export function NdaChat() {
         <div ref={bottomRef} />
       </div>
 
+      {downloadError && (
+        <p className="text-sm text-destructive bg-destructive/10 px-4 py-2">
+          {downloadError}
+        </p>
+      )}
+
       <div className="border-t p-3 space-y-2">
         <div className="flex gap-2">
           <Input
@@ -182,7 +176,7 @@ export function NdaChat() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Tell me about your NDA..."
+            placeholder={`Tell me about your ${docName}...`}
             disabled={loading}
             className="flex-1"
           />
@@ -191,8 +185,8 @@ export function NdaChat() {
           </Button>
         </div>
         <div className="flex justify-end">
-          <Button variant="default" onClick={handlePreview} disabled={!ready}>
-            Preview NDA →
+          <Button variant="default" onClick={handleDownload} disabled={!ready || downloading}>
+            {downloading ? "Generating..." : `Download ${docName} PDF`}
           </Button>
         </div>
       </div>

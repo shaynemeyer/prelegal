@@ -16,6 +16,7 @@ class MessageIn(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[MessageIn]
+    doc_type: str = "mutual-nda"
 
 
 class ChatResponse(BaseModel):
@@ -25,7 +26,7 @@ class ChatResponse(BaseModel):
 
 @router.post("", response_model=ChatResponse)
 async def chat(body: ChatRequest, _user: dict = Depends(get_current_user)) -> ChatResponse:
-    """Send conversation history to AI, receive reply and extracted NDA fields."""
+    """Send conversation history to AI, receive reply and extracted document fields."""
     messages = [{"role": m.role, "content": m.content} for m in body.messages]
-    result = await call_ai(messages)
+    result = await call_ai(messages, doc_type=body.doc_type)
     return ChatResponse(message=result["message"], fields=result.get("fields") or {})

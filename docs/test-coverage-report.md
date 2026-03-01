@@ -2,7 +2,7 @@
 
 **Generated:** 2026-03-01
 **Backend:** `uv run pytest --cov=app --cov-report=term-missing`
-**Frontend:** `bun playwright test` (Playwright e2e, 27 tests)
+**Frontend:** `bun playwright test` (Playwright e2e, 41 tests)
 
 ---
 
@@ -10,44 +10,52 @@
 
 | Layer | Tests | Passing | Coverage |
 | --- | --- | --- | --- |
-| Backend (pytest) | 54 | 54 | 93% |
-| Frontend (Playwright e2e) | 27 | 27 | All user flows covered |
+| Backend (pytest) | 142 | 142 | 99% |
+| Frontend (Playwright e2e) | 41 | 41 | All user flows covered |
 
-Backend exceeds the ≥80% target at 93%. The remaining 7% is confined to three narrow areas: the WeasyPrint entry point (`generate_nda_pdf`), static-file mount logic in `main.py`, and two minor branches in `logger.py` and `routes/root.py`.
+Backend is at 99%. The remaining 1% (5 statements in `main.py`) is the JWT warning branch inside the ASGI lifespan and the StaticFiles mount — both require environment setup outside the test runner.
 
 ---
 
 ## Backend Coverage by Module
 
 ```text
-app/ai.py                   100%   (20/20 stmts)
-app/auth.py                 100%   (22/22 stmts)
-app/config.py               100%   (11/11 stmts)
-app/database.py             100%   (13/13 stmts)
-app/routes/__init__.py      100%
-app/routes/auth.py          100%   (35/35 stmts)
-app/routes/chat.py          100%   (19/19 stmts)
-app/routes/health.py        100%    (5/5 stmts)
-app/services/__init__.py    100%
-app/logger.py                92%   miss: line 19 (json_logs=True branch)
-app/routes/nda.py            93%   miss: lines 36-37 (generate_pdf body)
-app/main.py                  83%   miss: lines 21-24, 46
-app/routes/root.py           80%   miss: line 8
-app/services/pdf_service.py  84%   miss: lines 178-188 (WeasyPrint call)
-─────────────────────────────────
-TOTAL                        93%   (233/250 stmts)
+app/ai.py                          100%   (28/28 stmts)
+app/auth.py                        100%   (22/22 stmts)
+app/config.py                      100%   (11/11 stmts)
+app/database.py                    100%   (13/13 stmts)
+app/logger.py                      100%   (12/12 stmts)
+app/routes/__init__.py             100%
+app/routes/auth.py                 100%   (35/35 stmts)
+app/routes/chat.py                 100%   (20/20 stmts)
+app/routes/document.py             100%   (16/16 stmts)
+app/routes/health.py               100%    (5/5 stmts)
+app/routes/nda.py                  100%   (28/28 stmts)
+app/routes/root.py                 100%    (5/5 stmts)
+app/services/__init__.py           100%
+app/services/document_service.py   100%   (49/49 stmts)
+app/services/pdf_service.py        100%   (51/51 stmts)
+app/services/pdf_utils.py          100%    (9/9 stmts)
+app/main.py                         83%   miss: lines 21-24, 47
+─────────────────────────────────────────
+TOTAL                               99%   (329/334 stmts)
 ```
 
 ### Coverage by test file
 
 ```mermaid
-pie title Backend test distribution (54 tests)
-    "Auth routes" : 7
-    "Auth utilities" : 7
+pie title Backend test distribution (142 tests)
+    "Auth routes" : 8
+    "Auth utilities" : 8
     "Database init" : 3
-    "PDF service helpers" : 28
-    "Chat routes" : 5
-    "AI module" : 4
+    "PDF service helpers" : 30
+    "PDF utils" : 3
+    "NDA routes" : 3
+    "Document service helpers" : 28
+    "Document routes" : 3
+    "Chat routes" : 8
+    "AI module" : 22
+    "Other" : 26
 ```
 
 ### Module coverage heatmap
@@ -55,9 +63,9 @@ pie title Backend test distribution (54 tests)
 ```mermaid
 xychart-beta
     title "Backend module coverage (%)"
-    x-axis ["ai", "auth", "cfg", "db", "r/auth", "r/chat", "hlth", "log", "r/nda", "main", "root", "pdf"]
+    x-axis ["ai", "auth", "cfg", "db", "log", "r/auth", "r/chat", "r/doc", "r/nda", "hlth", "root", "doc-svc", "pdf", "pdf-utils", "main"]
     y-axis "Coverage (%)" 0 --> 100
-    bar [100, 100, 100, 100, 100, 100, 100, 92, 93, 83, 80, 84]
+    bar [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 83]
 ```
 
 | Label | Module |
@@ -66,28 +74,33 @@ xychart-beta
 | auth | `app/auth.py` |
 | cfg | `app/config.py` |
 | db | `app/database.py` |
+| log | `app/logger.py` |
 | r/auth | `app/routes/auth.py` |
 | r/chat | `app/routes/chat.py` |
-| hlth | `app/routes/health.py` |
-| log | `app/logger.py` |
+| r/doc | `app/routes/document.py` |
 | r/nda | `app/routes/nda.py` |
-| main | `app/main.py` |
+| hlth | `app/routes/health.py` |
 | root | `app/routes/root.py` |
+| doc-svc | `app/services/document_service.py` |
 | pdf | `app/services/pdf_service.py` |
+| pdf-utils | `app/services/pdf_utils.py` |
+| main | `app/main.py` |
 
 ---
 
 ## Frontend Coverage (Playwright e2e)
 
-27 tests across 3 spec files cover all primary user flows.
+41 tests across 3 spec files cover all primary user flows.
 
 ```mermaid
-pie title Frontend test distribution (27 tests)
+pie title Frontend test distribution (41 tests)
     "Auth redirects" : 2
     "Signup" : 4
     "Login" : 4
-    "NDA form & preview" : 9
+    "Document selector" : 6
+    "NDA form & preview" : 11
     "AI chat tab" : 8
+    "Document form & preview" : 6
 ```
 
 ### User flow coverage
@@ -96,7 +109,7 @@ pie title Frontend test distribution (27 tests)
 flowchart TD
     A([Unauthenticated visitor]) -->|GET slash| B{AuthGuard}
     B -->|no token| C["/login"]
-    B -->|has token| D["Home / NDA Creator"]
+    B -->|has token| D["Home / Document Selector"]
 
     C -->|fill form| E{Submit}
     E -->|invalid creds| F[error message]
@@ -108,10 +121,14 @@ flowchart TD
     H -->|success| D
     G -->|click Sign in| C
 
-    D -->|Fill in Form tab| J[NDA form]
-    D -->|Chat with AI tab| K[AI chat interface]
+    D -->|select Mutual NDA| J[NDA creator tabs]
+    D -->|select other doc type| K2[DocumentPageTabs]
+    D -->|click Back| D
 
-    J -->|fill NDA fields| L{Preview NDA}
+    J -->|Fill in Form tab| J1[NDA form]
+    J -->|Chat with AI tab| K[AI chat interface]
+
+    J1 -->|fill NDA fields| L{Preview NDA}
     L -->|missing required fields| M[validation errors]
     L -->|all fields valid| N["/preview"]
 
@@ -119,15 +136,37 @@ flowchart TD
     O -->|key fields not yet collected| P[button disabled]
     O -->|key fields collected| N
 
+    K2 -->|Fill in Form tab| K6[DocumentForm]
+    K2 -->|Chat with AI tab| K2b[AI chat interface]
+    K6 -->|fill form fields| K7{Preview button}
+    K7 -->|missing required fields| K8[validation errors]
+    K7 -->|all fields valid| K9["/doc-preview"]
+    K2b -->|AI collects fields| K3{Download PDF button}
+    K3 -->|minimum fields not collected| K4[button disabled]
+    K3 -->|minimum fields collected| K5[PDF download]
+
     N -->|click Edit| D
     N -->|click Download PDF| Q[PDF download]
     N -->|no form data| R[fallback message]
+
+    K9 -->|click Edit| D
+    K9 -->|click Download PDF| Q
+    K9 -->|no form data| R
 
     style C fill:#d4f5d4
     style G fill:#d4f5d4
     style D fill:#d4f5d4
     style J fill:#d4f5d4
+    style J1 fill:#d4f5d4
     style K fill:#d4f5d4
+    style K2 fill:#d4f5d4
+    style K2b fill:#d4f5d4
+    style K3 fill:#d4f5d4
+    style K4 fill:#d4f5d4
+    style K6 fill:#d4f5d4
+    style K7 fill:#d4f5d4
+    style K8 fill:#d4f5d4
+    style K9 fill:#d4f5d4
     style N fill:#d4f5d4
     style F fill:#d4f5d4
     style I fill:#d4f5d4
@@ -135,6 +174,7 @@ flowchart TD
     style P fill:#d4f5d4
     style R fill:#d4f5d4
     style Q fill:#ffe8a0
+    style K5 fill:#ffe8a0
 ```
 
 **Legend:** Green = covered by tests. Yellow = partially covered (button visible, download not asserted).
@@ -145,31 +185,12 @@ flowchart TD
 
 ### Backend gaps
 
-#### 1. `pdf_service.py` — 84% (lines 178-188, `generate_nda_pdf`)
+#### `main.py` — 83% (lines 21-24, 47)
 
-All pure helper functions are now covered by `test_pdf_service.py` (28 tests). The remaining gap is the `generate_nda_pdf` async function, which calls WeasyPrint directly:
+- **Lines 21-24:** JWT warning branch inside the ASGI `lifespan` context manager. The `AsyncClient` test fixture doesn't trigger the ASGI lifespan, so this branch is never reached. Would require an `asgi-lifespan` integration or test restructuring.
+- **Line 47:** `app.mount(StaticFiles(...))` — only executed when `static/` exists on disk (Docker production). Not present in the test environment.
 
-```python
-async def generate_nda_pdf(data: object) -> bytes:
-    from weasyprint import HTML          # line 180 — miss
-    ...
-    pdf_bytes = HTML(string=full_html).write_pdf()  # miss
-```
-
-**Root cause:** WeasyPrint requires system libraries (`libpango`, fonts) not guaranteed in the test environment. The endpoint itself (`routes/nda.py` lines 36-37) is also uncovered for the same reason.
-
-#### 2. `main.py` — 83% (lines 21-24, 46)
-
-- **Lines 21-24:** Warning branch `if JWT_SECRET_KEY == "change-me-in-production"` — not triggered in tests.
-- **Line 46:** `app.mount(StaticFiles(...))` — skipped because `static/` doesn't exist during tests.
-
-#### 3. `logger.py` — 92% (line 19)
-
-- **Line 19:** The `json_logs=True` branch in `configure_logging`. Tests call it with default args only.
-
-#### 4. `routes/root.py` — 80% (line 8)
-
-- **Line 8:** `return {"message": "Prelegal API"}` — `GET /` is not called by any test.
+These are infrastructure concerns rather than application logic and are not worth the test complexity they would require.
 
 ### Frontend gaps
 
@@ -181,6 +202,16 @@ async def generate_nda_pdf(data: object) -> bytes:
 | Login happy path | Covered | |
 | Login wrong password | Covered | |
 | Login/Signup cross-links | Covered | |
+| Document selector renders all types | Covered | |
+| Selecting NDA shows form+chat tabs | Covered | |
+| Selecting non-NDA shows form+chat tabs | Covered | |
+| Back button returns to selector | Covered | |
+| Non-NDA PDF button disabled initially | Covered | |
+| Non-NDA form submits to /doc-preview | Covered | |
+| /doc-preview shows cover data | Covered | |
+| /doc-preview fallback (no data) | Covered | |
+| /doc-preview Edit button returns to / | Covered | |
+| /doc-preview Download PDF visible | Covered | |
 | NDA form renders | Covered | |
 | NDA validation errors | Covered | |
 | NDA → Preview navigation | Covered | |
@@ -194,108 +225,10 @@ async def generate_nda_pdf(data: object) -> bytes:
 | Send button state (disabled/enabled) | Covered | |
 | Preview NDA button disabled initially | Covered | |
 | Tab switching works | Covered | |
-| **PDF download completes** | **Not covered** | Requires backend running with WeasyPrint |
+| **PDF download completes** | **Not covered** | Requires backend running with Playwright Chromium |
 | **AI fills form fields via chat** | **Not covered** | Requires live OpenRouter API key |
 | **Token expiry / re-login** | **Not covered** | JWT expiry not simulated |
 | **Logout** | **Not covered** | No logout UI exists yet |
-
----
-
-## Remaining Recommendations
-
-### High priority
-
-#### B2 — Test `POST /api/nda/generate-pdf` with WeasyPrint mocked
-
-Mock `generate_nda_pdf` to cover `routes/nda.py` lines 36-37 without the system dependency:
-
-```python
-# backend/tests/test_nda_routes.py
-from unittest.mock import AsyncMock, patch
-
-@pytest.mark.asyncio
-async def test_generate_pdf_returns_pdf_bytes(client):
-    payload = {
-        "purpose": "Partnership evaluation",
-        "effective_date": "2025-01-01",
-        "mnda_term_type": "expires",
-        "mnda_term_years": 1,
-        "confidentiality_type": "years",
-        "confidentiality_years": 2,
-        "governing_law": "California",
-        "jurisdiction": "San Francisco County",
-        "party1": {"print_name": "Alice", "title": "CEO", "company": "Acme",
-                   "notice_address": "123 Main", "date": "2025-01-01"},
-        "party2": {"print_name": "Bob", "title": "CTO", "company": "Widget",
-                   "notice_address": "456 Oak", "date": "2025-01-01"},
-    }
-    with patch("app.routes.nda.generate_nda_pdf", new=AsyncMock(return_value=b"%PDF-fake")):
-        res = await client.post("/api/nda/generate-pdf", json=payload)
-    assert res.status_code == 200
-    assert res.headers["content-type"] == "application/pdf"
-```
-
-#### B3 — Test `GET /` root endpoint
-
-```python
-@pytest.mark.asyncio
-async def test_root_returns_api_message(client):
-    res = await client.get("/")
-    assert res.status_code == 200
-    assert res.json()["message"] == "Prelegal API"
-```
-
-### Medium priority
-
-#### B4 — Cover the `json_logs=True` branch in `logger.py`
-
-```python
-def test_configure_logging_json_mode():
-    from app.logger import configure_logging
-    configure_logging(json_logs=True, log_level="WARNING")
-```
-
-#### F1 — Assert PDF download completes (frontend)
-
-```typescript
-test('download PDF triggers file download', async ({ page }) => {
-  await signUp(page);
-  await fillNdaForm(page);
-  await page.getByRole('button', { name: 'Preview NDA →' }).click();
-
-  const [download] = await Promise.all([
-    page.waitForEvent('download'),
-    page.getByRole('button', { name: /download pdf/i }).click(),
-  ]);
-  expect(download.suggestedFilename()).toBe('mutual-nda.pdf');
-});
-```
-
-> Requires backend running with WeasyPrint available (integration environment only).
-
-#### F2 — Test AI fills form fields end-to-end
-
-```typescript
-test('AI chat fills governing law field', async ({ page }) => {
-  // Requires OPENROUTER_API_KEY set in test environment
-  await signUp(page);
-  await page.getByRole('tab', { name: 'Chat with AI' }).click();
-  await page.waitForSelector('text=Hello'); // wait for AI greeting
-  await page.getByPlaceholder('Tell me about your NDA...').fill('California');
-  await page.getByRole('button', { name: 'Send' }).click();
-  // AI should extract governing law
-});
-```
-
-### Low priority
-
-#### F3 — Token expiry behaviour
-
-Manually set an expired JWT in `localStorage` and verify the user is redirected to `/login`.
-
-#### F4 — Logout flow
-
-No logout UI exists yet. Add this test when the feature is built.
 
 ---
 
@@ -304,9 +237,9 @@ No logout UI exists yet. Add this test when the feature is built.
 ```mermaid
 xychart-beta
     title "Backend total coverage progress (%)"
-    x-axis ["Before PL-4", "After PL-4 (v1)", "After PL-5 (now)", "After B2+B3 (projected)"]
+    x-axis ["Before PL-4", "After PL-4 (v1)", "After PL-5", "After PL-6 (Playwright migration)", "Now (142 tests)"]
     y-axis "Total coverage (%)" 70 --> 100
-    line [79, 92, 93, 95]
+    line [79, 92, 93, 89, 99]
 ```
 
 ---
@@ -317,19 +250,23 @@ xychart-beta
 graph TD
     subgraph Backend ["Backend (pytest + httpx AsyncClient)"]
         C[conftest.py<br/>AsyncClient fixture<br/>isolated SQLite DB]
-        T1[test_auth_utils.py<br/>hash, verify, JWT tokens]
-        T2[test_auth_routes.py<br/>signup, login, health]
+        T1[test_auth_utils.py<br/>hash, verify, JWT, logger]
+        T2[test_auth_routes.py<br/>signup, login, health, root]
         T3[test_database.py<br/>init, columns, idempotent]
-        T4[test_pdf_service.py<br/>28 helper unit tests]
-        T5[test_chat_routes.py<br/>auth, messages, fields]
-        T6[test_ai.py<br/>call_ai unit tests]
-        C --> T1 & T2 & T3 & T5 & T6
+        T4[test_pdf_service.py<br/>30 tests: helpers + generate_nda_pdf]
+        T4b[test_pdf_utils.py<br/>3 tests: html_to_pdf mocked]
+        T5[test_chat_routes.py<br/>auth, doc_type, messages]
+        T6[test_ai.py<br/>call_ai, per-doc prompts]
+        T7[test_document_service.py<br/>cover HTML, template files, generate_document_pdf]
+        T8[test_document_routes.py<br/>generate-pdf endpoint]
+        T9[test_nda_routes.py<br/>3 tests: generate-pdf endpoint]
+        C --> T1 & T2 & T3 & T5 & T6 & T7 & T8 & T9
     end
 
     subgraph Frontend ["Frontend (Playwright e2e)"]
         P1[auth.spec.ts<br/>redirects, signup, login]
         P2[nda.spec.ts<br/>form, validation, preview]
-        P3[chat.spec.ts<br/>tabs, chat UI, button states]
+        P3[chat.spec.ts<br/>doc selector, chat UI, buttons, doc-preview]
     end
 
     subgraph App ["Running app"]
@@ -346,7 +283,11 @@ graph TD
     FE --> BE
 
     style T4 fill:#d4f5d4,stroke:#2a7a2a
+    style T4b fill:#d4f5d4,stroke:#2a7a2a
     style T5 fill:#d4f5d4,stroke:#2a7a2a
     style T6 fill:#d4f5d4,stroke:#2a7a2a
+    style T7 fill:#d4f5d4,stroke:#2a7a2a
+    style T8 fill:#d4f5d4,stroke:#2a7a2a
+    style T9 fill:#d4f5d4,stroke:#2a7a2a
     style P3 fill:#d4f5d4,stroke:#2a7a2a
 ```

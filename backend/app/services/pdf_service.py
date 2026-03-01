@@ -177,12 +177,12 @@ def _build_full_html(cover_html: str, terms_html: str) -> str:
 async def generate_nda_pdf(data: object) -> bytes:
     logger.info("Generating NDA PDF", party1=data.party1.company, party2=data.party2.company)
 
-    from weasyprint import HTML
+    from app.services.pdf_utils import html_to_pdf
 
     cover_html = _build_cover_page_html(data)
     terms_html = _build_standard_terms_html(data)
     full_html = _build_full_html(cover_html, terms_html)
 
-    pdf_bytes = HTML(string=full_html).write_pdf()
+    pdf_bytes = await html_to_pdf(full_html)
     logger.info("PDF generated successfully")
     return pdf_bytes

@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import CORS_ORIGINS, JWT_SECRET_KEY, LOG_LEVEL
 from app.database import init_db
 from app.logger import configure_logging
-from app.routes import auth, chat, health, nda, root
+from app.routes import auth, chat, document, health, nda, root
 
 configure_logging(log_level=LOG_LEVEL)
 logger = logging.getLogger(__name__)
@@ -37,6 +37,7 @@ app.add_middleware(
 app.include_router(root.router)
 app.include_router(health.router)
 app.include_router(nda.router)
+app.include_router(document.router)
 app.include_router(auth.router)
 app.include_router(chat.router)
 

@@ -14,17 +14,6 @@ RUN bun --bun next build
 # Stage 2: Runtime — Python + FastAPI serving API and static files
 FROM python:3.12-slim AS runtime
 
-# Install system deps required by WeasyPrint
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpango-1.0-0 \
-    libpangoft2-1.0-0 \
-    libpangocairo-1.0-0 \
-    libglib2.0-0 \
-    libcairo2 \
-    libffi-dev \
-    shared-mime-info \
-    && rm -rf /var/lib/apt/lists/*
-
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
@@ -36,6 +25,9 @@ COPY backend/ ./backend/
 # Install Python dependencies
 WORKDIR /app/backend
 RUN uv sync --frozen --no-dev
+
+# Install Playwright Chromium and its system dependencies
+RUN uv run playwright install --with-deps chromium
 
 # Copy templates and catalog
 COPY templates/ /app/templates/

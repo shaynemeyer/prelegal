@@ -1,4 +1,5 @@
-"""Unit tests for pdf_service helpers — no WeasyPrint required."""
+"""Unit tests for pdf_service — helpers and generate_nda_pdf (html_to_pdf mocked)."""
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -11,6 +12,7 @@ from app.services.pdf_service import (
     _format_mnda_term,
     _load_template,
     _replace_coverpage_variables,
+    generate_nda_pdf,
 )
 
 
@@ -210,3 +212,22 @@ def test_standard_terms_html_contains_injected_governing_law():
 def test_standard_terms_html_returns_html_string():
     html = _build_standard_terms_html(_data())
     assert "<" in html and ">" in html
+
+
+# ── generate_nda_pdf ──────────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_generate_nda_pdf_returns_bytes():
+    with patch("app.services.pdf_utils.html_to_pdf", new=AsyncMock(return_value=b"%PDF-fake")):
+        result = await generate_nda_pdf(_data())
+    assert result == b"%PDF-fake"
+
+
+@pytest.mark.asyncio
+async def test_generate_nda_pdf_calls_html_to_pdf_with_html():
+    with patch("app.services.pdf_utils.html_to_pdf", new=AsyncMock(return_value=b"%PDF-fake")) as mock_pdf:
+        await generate_nda_pdf(_data())
+    html_arg = mock_pdf.call_args[0][0]
+    assert "<!DOCTYPE html>" in html_arg
+    assert "Company 1" in html_arg
