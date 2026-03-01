@@ -27,41 +27,73 @@ A dataset of 12 open-source legal agreement templates sourced from [Common Paper
 
 ### Mutual NDA Creator (`frontend/` + `backend/`)
 
-A full-stack prototype web app (PL-3) for generating a Mutual NDA:
+A full-stack web app for generating a Mutual NDA:
 
-1. **Fill in a form** — purpose, dates, MNDA term, confidentiality, governing law, jurisdiction, and both parties' details
-2. **Preview the completed NDA** — cover page with filled-in values and full standard terms with variables injected
-3. **Download as PDF** — letter-format PDF generated server-side
+1. **Sign up / sign in** — JWT-authenticated accounts
+2. **Fill in a form** — purpose, dates, MNDA term, confidentiality, governing law, jurisdiction, and both parties' details
+3. **Preview the completed NDA** — cover page with filled-in values and full standard terms with variables injected
+4. **Download as PDF** — letter-format PDF generated server-side
 
 ## Stack
 
 | Layer          | Technology                          |
 | -------------- | ----------------------------------- |
 | Frontend       | Next.js 16 + TypeScript + shadcn/ui |
-| API layer      | tRPC v11 + TanStack Query           |
 | State          | Zustand                             |
 | Validation     | Zod + react-hook-form               |
 | Backend        | FastAPI (Python) + uv               |
+| Database       | SQLite                              |
+| Auth           | JWT (python-jose + bcrypt)          |
 | PDF generation | WeasyPrint                          |
+| Deployment     | Single Docker container             |
 
-## Running locally
+## Running
 
-**Backend:**
+### Docker (recommended)
+
+Requires [Docker](https://docs.docker.com/get-docker/).
+
+```bash
+# Mac / Linux
+./scripts/start-mac.sh     # builds image and starts container
+./scripts/stop-mac.sh      # stops and removes container
+
+# Linux
+./scripts/start-linux.sh
+./scripts/stop-linux.sh
+
+# Windows (PowerShell)
+./scripts/start-windows.ps1
+./scripts/stop-windows.ps1
+```
+
+App runs at **http://localhost:8000**. The SQLite database is created fresh on each container start and persisted to a Docker volume (`prelegal-data`).
+
+To use a custom port:
+
+```bash
+PORT=9000 ./scripts/start-mac.sh
+```
+
+### Local development
+
+Run backend and frontend in separate terminals.
+
+**Terminal 1 — backend:**
 
 ```bash
 cd backend
 uv sync
-cp .env.example .env
-uv run uvicorn app.main:app --reload
+DATABASE_PATH=./prelegal.db uv run uvicorn app.main:app --reload
 # Runs on http://localhost:8000
 ```
 
-**Frontend:**
+**Terminal 2 — frontend:**
 
 ```bash
 cd frontend
 bun install
-cp .env.local.example .env.local
+cp .env.local.example .env.local   # sets NEXT_PUBLIC_API_URL=http://localhost:8000
 bun dev
 # Runs on http://localhost:3000
 ```
@@ -69,8 +101,9 @@ bun dev
 ## Progress
 
 - [x] Legal document template dataset (12 templates)
-- [x] Mutual NDA creator prototype (form → preview → PDF download)
+- [x] V1 foundation: Docker, SQLite, JWT auth, start/stop scripts
+- [x] Mutual NDA creator (form → preview → PDF download)
 - [ ] Additional document creators
-- [ ] Testing
-- [ ] Documentation
+- [ ] AI chat for document drafting
+- [ ] Document persistence
 - [ ] Release
