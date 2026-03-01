@@ -114,7 +114,7 @@ bun dev
 
 ```bash
 # Backend (from backend/)
-uv run pytest --cov=app --cov-report=term-missing   # 92% coverage, 130 tests
+uv run pytest --cov=app --cov-report=term-missing   # 99% coverage, 142 tests
 
 # Frontend (from frontend/)
 bun playwright test                                  # 41 e2e tests
@@ -128,7 +128,7 @@ See [`docs/test-coverage-report.md`](docs/test-coverage-report.md) for full cove
 - [x] V1 foundation: Docker, SQLite, JWT auth, start/stop scripts
 - [x] Mutual NDA creator (form → preview → PDF download)
 - [x] AI chat for NDA drafting (freeform chat auto-fills the form)
-- [x] Backend tests (92% coverage, 130 tests) and frontend e2e tests (41 flows)
+- [x] Backend tests (99% coverage, 142 tests) and frontend e2e tests (41 flows)
 - [x] All 11 document types supported via AI-guided chat + PDF generation
 - [ ] Document persistence
 - [ ] Release

@@ -65,3 +65,22 @@ def test_build_standard_terms_html_returns_html(doc_type):
 async def test_generate_document_pdf_raises_for_unknown_type():
     with pytest.raises(ValueError, match="Unsupported"):
         await generate_document_pdf("unknown-type", {})
+
+
+@pytest.mark.asyncio
+async def test_generate_document_pdf_returns_bytes():
+    from unittest.mock import AsyncMock, patch
+
+    with patch("app.services.pdf_utils.html_to_pdf", new=AsyncMock(return_value=b"%PDF-fake")):
+        result = await generate_document_pdf("csa", {"effectiveDate": "2025-01-01"})
+    assert result == b"%PDF-fake"
+
+
+@pytest.mark.asyncio
+async def test_generate_document_pdf_calls_html_to_pdf_with_html():
+    from unittest.mock import AsyncMock, patch
+
+    with patch("app.services.pdf_utils.html_to_pdf", new=AsyncMock(return_value=b"%PDF-fake")) as mock_pdf:
+        await generate_document_pdf("sla", {"effectiveDate": "2025-01-01"})
+    html_arg = mock_pdf.call_args[0][0]
+    assert "<!DOCTYPE html>" in html_arg

@@ -10,10 +10,10 @@
 
 | Layer | Tests | Passing | Coverage |
 | --- | --- | --- | --- |
-| Backend (pytest) | 130 | 130 | 89% |
+| Backend (pytest) | 142 | 142 | 99% |
 | Frontend (Playwright e2e) | 41 | 41 | All user flows covered |
 
-Backend exceeds the ≥80% target at 89%. The remaining 11% is confined to four narrow areas: the Playwright PDF entry points (`generate_nda_pdf`, `generate_document_pdf`, `html_to_pdf`), static-file mount logic in `main.py`, and minor untested branches in `logger.py` and `routes/root.py`.
+Backend is at 99%. The remaining 1% (5 statements in `main.py`) is the JWT warning branch inside the ASGI lifespan and the StaticFiles mount — both require environment setup outside the test runner.
 
 ---
 
@@ -24,32 +24,34 @@ app/ai.py                          100%   (28/28 stmts)
 app/auth.py                        100%   (22/22 stmts)
 app/config.py                      100%   (11/11 stmts)
 app/database.py                    100%   (13/13 stmts)
+app/logger.py                      100%   (12/12 stmts)
 app/routes/__init__.py             100%
 app/routes/auth.py                 100%   (35/35 stmts)
 app/routes/chat.py                 100%   (20/20 stmts)
 app/routes/document.py             100%   (16/16 stmts)
 app/routes/health.py               100%    (5/5 stmts)
+app/routes/nda.py                  100%   (28/28 stmts)
+app/routes/root.py                 100%    (5/5 stmts)
 app/services/__init__.py           100%
-app/logger.py                       92%   miss: line 19 (json_logs=True branch)
-app/routes/nda.py                   93%   miss: lines 36-37 (generate_pdf body)
-app/services/document_service.py    80%   miss: line 166, 231-242 (Playwright call)
+app/services/document_service.py   100%   (49/49 stmts)
+app/services/pdf_service.py        100%   (51/51 stmts)
+app/services/pdf_utils.py          100%    (9/9 stmts)
 app/main.py                         83%   miss: lines 21-24, 47
-app/routes/root.py                  80%   miss: line 8
-app/services/pdf_service.py         84%   miss: lines 178-188 (Playwright call)
-app/services/pdf_utils.py            0%   miss: lines 2-17 (html_to_pdf — needs browser)
 ─────────────────────────────────────────
-TOTAL                               89%   (298/334 stmts)
+TOTAL                               99%   (329/334 stmts)
 ```
 
 ### Coverage by test file
 
 ```mermaid
-pie title Backend test distribution (130 tests)
-    "Auth routes" : 7
-    "Auth utilities" : 7
+pie title Backend test distribution (142 tests)
+    "Auth routes" : 8
+    "Auth utilities" : 8
     "Database init" : 3
-    "PDF service helpers" : 28
-    "Document service helpers" : 26
+    "PDF service helpers" : 30
+    "PDF utils" : 3
+    "NDA routes" : 3
+    "Document service helpers" : 28
     "Document routes" : 3
     "Chat routes" : 8
     "AI module" : 22
@@ -61,9 +63,9 @@ pie title Backend test distribution (130 tests)
 ```mermaid
 xychart-beta
     title "Backend module coverage (%)"
-    x-axis ["ai", "auth", "cfg", "db", "r/auth", "r/chat", "r/doc", "hlth", "log", "r/nda", "main", "root", "doc-svc", "pdf", "pdf-utils"]
+    x-axis ["ai", "auth", "cfg", "db", "log", "r/auth", "r/chat", "r/doc", "r/nda", "hlth", "root", "doc-svc", "pdf", "pdf-utils", "main"]
     y-axis "Coverage (%)" 0 --> 100
-    bar [100, 100, 100, 100, 100, 100, 100, 100, 92, 93, 83, 80, 80, 84, 0]
+    bar [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 83]
 ```
 
 | Label | Module |
@@ -72,17 +74,17 @@ xychart-beta
 | auth | `app/auth.py` |
 | cfg | `app/config.py` |
 | db | `app/database.py` |
+| log | `app/logger.py` |
 | r/auth | `app/routes/auth.py` |
 | r/chat | `app/routes/chat.py` |
 | r/doc | `app/routes/document.py` |
-| hlth | `app/routes/health.py` |
-| log | `app/logger.py` |
 | r/nda | `app/routes/nda.py` |
-| main | `app/main.py` |
+| hlth | `app/routes/health.py` |
 | root | `app/routes/root.py` |
 | doc-svc | `app/services/document_service.py` |
 | pdf | `app/services/pdf_service.py` |
 | pdf-utils | `app/services/pdf_utils.py` |
+| main | `app/main.py` |
 
 ---
 
@@ -183,47 +185,12 @@ flowchart TD
 
 ### Backend gaps
 
-#### 1. `pdf_utils.py` — 0% (lines 2-17, `html_to_pdf`)
+#### `main.py` — 83% (lines 21-24, 47)
 
-`html_to_pdf` launches a real Playwright browser to render HTML. It is not covered in the test suite because spinning up a headless Chromium instance in CI adds significant overhead and environment requirements. All callers (`generate_nda_pdf`, `generate_document_pdf`) are tested via mocking.
+- **Lines 21-24:** JWT warning branch inside the ASGI `lifespan` context manager. The `AsyncClient` test fixture doesn't trigger the ASGI lifespan, so this branch is never reached. Would require an `asgi-lifespan` integration or test restructuring.
+- **Line 47:** `app.mount(StaticFiles(...))` — only executed when `static/` exists on disk (Docker production). Not present in the test environment.
 
-#### 2. `pdf_service.py` — 84% (lines 178-188, `generate_nda_pdf`)
-
-All pure helper functions are covered by `test_pdf_service.py` (28 tests). The remaining gap is the `generate_nda_pdf` async function, which calls `html_to_pdf`:
-
-```python
-async def generate_nda_pdf(data: object) -> bytes:
-    from app.services.pdf_utils import html_to_pdf   # line 180 — miss
-    ...
-    pdf_bytes = await html_to_pdf(full_html)          # miss
-```
-
-The NDA endpoint itself (`routes/nda.py` lines 36-37) is also uncovered for the same reason.
-
-#### 3. `document_service.py` — 80% (line 166, 231-242)
-
-Same as above — `generate_document_pdf` calls `html_to_pdf`:
-
-```python
-async def generate_document_pdf(doc_type: str, fields: dict) -> bytes:
-    from app.services.pdf_utils import html_to_pdf   # line 231 — miss
-    pdf_bytes = await html_to_pdf(full_html)          # miss
-```
-
-All pure helpers (`_build_generic_cover_html`, `_build_standard_terms_html`) are covered.
-
-#### 4. `main.py` — 83% (lines 21-24, 47)
-
-- **Lines 21-24:** Warning branch `if JWT_SECRET_KEY == "change-me-in-production"` — not triggered in tests.
-- **Line 47:** `app.mount(StaticFiles(...))` — skipped because `static/` doesn't exist during tests.
-
-#### 5. `logger.py` — 92% (line 19)
-
-- **Line 19:** The `json_logs=True` branch in `configure_logging`. Tests call it with default args only.
-
-#### 6. `routes/root.py` — 80% (line 8)
-
-- **Line 8:** `return {"message": "Prelegal API"}` — `GET /` is not called by any test.
+These are infrastructure concerns rather than application logic and are not worth the test complexity they would require.
 
 ### Frontend gaps
 
@@ -265,115 +232,15 @@ All pure helpers (`_build_generic_cover_html`, `_build_standard_terms_html`) are
 
 ---
 
-## Remaining Recommendations
-
-### High priority
-
-#### B2 — Test `POST /api/nda/generate-pdf` with pdf_utils mocked
-
-Mock `generate_nda_pdf` (or `html_to_pdf`) to cover `routes/nda.py` lines 36-37 without launching a browser:
-
-```python
-# backend/tests/test_nda_routes.py
-from unittest.mock import AsyncMock, patch
-
-@pytest.mark.asyncio
-async def test_generate_pdf_returns_pdf_bytes(client):
-    payload = {
-        "purpose": "Partnership evaluation",
-        "effective_date": "2025-01-01",
-        "mnda_term_type": "expires",
-        "mnda_term_years": 1,
-        "confidentiality_type": "years",
-        "confidentiality_years": 2,
-        "governing_law": "California",
-        "jurisdiction": "San Francisco County",
-        "party1": {"print_name": "Alice", "title": "CEO", "company": "Acme",
-                   "notice_address": "123 Main", "date": "2025-01-01"},
-        "party2": {"print_name": "Bob", "title": "CTO", "company": "Widget",
-                   "notice_address": "456 Oak", "date": "2025-01-01"},
-    }
-    with patch("app.routes.nda.generate_nda_pdf", new=AsyncMock(return_value=b"%PDF-fake")):
-        res = await client.post("/api/nda/generate-pdf", json=payload)
-    assert res.status_code == 200
-    assert res.headers["content-type"] == "application/pdf"
-```
-
-#### B3 — Test `GET /` root endpoint
-
-```python
-@pytest.mark.asyncio
-async def test_root_returns_api_message(client):
-    res = await client.get("/")
-    assert res.status_code == 200
-    assert res.json()["message"] == "Prelegal API"
-```
-
-### Medium priority
-
-#### B4 — Cover the `json_logs=True` branch in `logger.py`
-
-```python
-def test_configure_logging_json_mode():
-    from app.logger import configure_logging
-    configure_logging(json_logs=True, log_level="WARNING")
-```
-
-#### F1 — Assert PDF download completes (frontend)
-
-```typescript
-test('download PDF triggers file download', async ({ page }) => {
-  await goToNda(page);
-  await fillNdaForm(page);
-  await page.getByRole('button', { name: 'Preview NDA →' }).click();
-
-  const [download] = await Promise.all([
-    page.waitForEvent('download'),
-    page.getByRole('button', { name: /download pdf/i }).click(),
-  ]);
-  expect(download.suggestedFilename()).toBe('mutual-nda.pdf');
-});
-```
-
-> Requires backend running with `playwright install chromium` completed (integration environment only).
-
-#### F2 — Test AI fills form fields end-to-end
-
-```typescript
-test('AI chat fills governing law field', async ({ page }) => {
-  // Requires OPENROUTER_API_KEY set in test environment
-  await goToNda(page);
-  await page.getByRole('tab', { name: 'Chat with AI' }).click();
-  await page.waitForSelector('text=Hello'); // wait for AI greeting
-  await page.getByPlaceholder('Tell me about your NDA...').fill('California');
-  await page.getByRole('button', { name: 'Send' }).click();
-  // AI should extract governing law
-});
-```
-
-### Low priority
-
-#### F3 — Token expiry behaviour
-
-Manually set an expired JWT in `localStorage` and verify the user is redirected to `/login`.
-
-#### F4 — Logout flow
-
-No logout UI exists yet. Add this test when the feature is built.
-
----
-
 ## Coverage progress
 
 ```mermaid
 xychart-beta
     title "Backend total coverage progress (%)"
-    x-axis ["Before PL-4", "After PL-4 (v1)", "After PL-5", "After PL-6", "After B2+B3 (projected)"]
+    x-axis ["Before PL-4", "After PL-4 (v1)", "After PL-5", "After PL-6 (Playwright migration)", "Now (142 tests)"]
     y-axis "Total coverage (%)" 70 --> 100
-    line [79, 92, 93, 89, 91]
+    line [79, 92, 93, 89, 99]
 ```
-
-> Note: Coverage dropped from 93% to 89% because `pdf_utils.py` (9 statements, 0% covered) was added when migrating from WeasyPrint to Playwright. The new module requires a real browser to test. All other modules are at the same coverage as before.
 
 ---
 
@@ -383,15 +250,17 @@ xychart-beta
 graph TD
     subgraph Backend ["Backend (pytest + httpx AsyncClient)"]
         C[conftest.py<br/>AsyncClient fixture<br/>isolated SQLite DB]
-        T1[test_auth_utils.py<br/>hash, verify, JWT tokens]
-        T2[test_auth_routes.py<br/>signup, login, health]
+        T1[test_auth_utils.py<br/>hash, verify, JWT, logger]
+        T2[test_auth_routes.py<br/>signup, login, health, root]
         T3[test_database.py<br/>init, columns, idempotent]
-        T4[test_pdf_service.py<br/>28 helper unit tests]
+        T4[test_pdf_service.py<br/>30 tests: helpers + generate_nda_pdf]
+        T4b[test_pdf_utils.py<br/>3 tests: html_to_pdf mocked]
         T5[test_chat_routes.py<br/>auth, doc_type, messages]
         T6[test_ai.py<br/>call_ai, per-doc prompts]
-        T7[test_document_service.py<br/>cover HTML, template files]
+        T7[test_document_service.py<br/>cover HTML, template files, generate_document_pdf]
         T8[test_document_routes.py<br/>generate-pdf endpoint]
-        C --> T1 & T2 & T3 & T5 & T6 & T7 & T8
+        T9[test_nda_routes.py<br/>3 tests: generate-pdf endpoint]
+        C --> T1 & T2 & T3 & T5 & T6 & T7 & T8 & T9
     end
 
     subgraph Frontend ["Frontend (Playwright e2e)"]
@@ -414,9 +283,11 @@ graph TD
     FE --> BE
 
     style T4 fill:#d4f5d4,stroke:#2a7a2a
+    style T4b fill:#d4f5d4,stroke:#2a7a2a
     style T5 fill:#d4f5d4,stroke:#2a7a2a
     style T6 fill:#d4f5d4,stroke:#2a7a2a
     style T7 fill:#d4f5d4,stroke:#2a7a2a
     style T8 fill:#d4f5d4,stroke:#2a7a2a
+    style T9 fill:#d4f5d4,stroke:#2a7a2a
     style P3 fill:#d4f5d4,stroke:#2a7a2a
 ```

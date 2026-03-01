@@ -47,3 +47,8 @@ def test_decode_access_token_raises_on_tampered():
     tampered = token[:-4] + "XXXX"
     with pytest.raises(JWTError):
         decode_access_token(tampered)
+
+
+def test_configure_logging_json_mode():
+    from app.logger import configure_logging
+    configure_logging(json_logs=True, log_level="WARNING")
