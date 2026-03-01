@@ -76,16 +76,31 @@ test.describe("Document selector", () => {
     await expect(page.getByRole("button", { name: "Pilot Agreement" })).toBeVisible();
   });
 
-  test("selecting a non-NDA document shows DocumentChat", async ({ page }) => {
+  test("selecting a non-NDA document shows form and chat tabs", async ({ page }) => {
     await signUp(page);
     await page.getByRole("button", { name: "Pilot Agreement" }).click();
+    await expect(page.getByRole("tab", { name: "Fill in Form" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Chat with AI" })).toBeVisible();
+  });
+
+  test("form tab is active by default for non-NDA documents", async ({ page }) => {
+    await signUp(page);
+    await page.getByRole("button", { name: "Pilot Agreement" }).click();
+    await expect(page.getByRole("tab", { name: "Fill in Form" })).toHaveAttribute("data-state", "active");
+  });
+
+  test("switching to Chat with AI tab shows chat interface", async ({ page }) => {
+    await signUp(page);
+    await page.getByRole("button", { name: "Pilot Agreement" }).click();
+    await page.getByRole("tab", { name: "Chat with AI" }).click();
     await expect(page.getByPlaceholder(/Pilot Agreement/)).toBeVisible();
     await expect(page.getByRole("button", { name: "Send" })).toBeVisible();
   });
 
-  test("non-NDA document has Generate PDF button disabled initially", async ({ page }) => {
+  test("non-NDA document chat has Download PDF button disabled initially", async ({ page }) => {
     await signUp(page);
     await page.getByRole("button", { name: "Pilot Agreement" }).click();
+    await page.getByRole("tab", { name: "Chat with AI" }).click();
     await expect(page.getByRole("button", { name: /Download.*PDF/i })).toBeDisabled();
   });
 

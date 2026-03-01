@@ -4,7 +4,7 @@ import { useState } from "react";
 import { AuthGuard } from "@/components/AuthGuard";
 import { DocumentSelector } from "@/components/DocumentSelector";
 import { NdaPageTabs } from "@/components/NdaPageTabs";
-import { DocumentChat } from "@/components/chat/DocumentChat";
+import { DocumentPageTabs } from "@/components/document/DocumentPageTabs";
 import { Button } from "@/components/ui/button";
 import { catalog, NDA_DOC_TYPE, type CatalogEntry } from "@/lib/catalog";
 
@@ -23,7 +23,7 @@ function DocumentCreator({ entry, onBack }: { entry: CatalogEntry; onBack: () =>
       {entry.docType === NDA_DOC_TYPE ? (
         <NdaPageTabs />
       ) : (
-        <DocumentChat docType={entry.docType} docName={entry.name} />
+        <DocumentPageTabs docType={entry.docType} docName={entry.name} />
       )}
     </div>
   );
