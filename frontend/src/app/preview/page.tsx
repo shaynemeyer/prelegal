@@ -1,6 +1,7 @@
 import { readFile } from "fs/promises";
 import path from "path";
 import { NdaPreview } from "@/components/nda/NdaPreview";
+import { AuthGuard } from "@/components/AuthGuard";
 
 export default async function PreviewPage() {
   const templatesDir = path.resolve(process.cwd(), "../templates");
@@ -12,14 +13,16 @@ export default async function PreviewPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">NDA Preview</h2>
-        <p className="text-muted-foreground mt-1">
-          Review your completed Mutual NDA below, then download as PDF.
-        </p>
+    <AuthGuard>
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">NDA Preview</h2>
+          <p className="text-muted-foreground mt-1">
+            Review your completed Mutual NDA below, then download as PDF.
+          </p>
+        </div>
+        <NdaPreview standardTerms={standardTerms} />
       </div>
-      <NdaPreview standardTerms={standardTerms} />
-    </div>
+    </AuthGuard>
   );
 }

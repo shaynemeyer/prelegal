@@ -8,7 +8,7 @@ The available documents are covered in the catalog.json file in the project root
 
 @catalog.json
 
-The current implementation supports all 11 document types via AI chat with full user authentication and document persistence.
+The current implementation supports Mutual NDA document generation. Additional document types, AI chat, and document persistence are not yet implemented.
 
 ## Development process
 
@@ -29,12 +29,11 @@ There is an OPENROUTER_API_KEY in the .env file in the project root.
 
 Similar archicture example: https://github.com/shaynemeyer/agentic-pm
 
-The entire project should be packaged into a Docker container.  
-The backend should be in backend/ and be a uv project, using FastAPI.  
-The frontend should be in frontend/  
-The database should use SQLLite and be created from scratch each time the Docker container is brought up, allowing for a users table with sign up and sign in.  
-Consider statically building the frontend and serving it via FastAPI, if that will work.  
-There should be scripts in scripts/ for:
+The entire project is packaged into a single Docker container.
+The backend is in `backend/` — a `uv` project using FastAPI, available at http://localhost:8000.
+The frontend is in `frontend/` — Next.js with TypeScript, statically built (`output: 'export'`) and served by FastAPI via `StaticFiles`. There are no Next.js API routes; the frontend calls FastAPI directly.
+The database uses SQLite at `/data/prelegal.db`, created from scratch each time the Docker container starts, with a `users` table for sign up and sign in.
+Scripts are in `scripts/`:
 
 ```bash
 # Mac
@@ -60,4 +59,28 @@ Backend available at http://localhost:8000
 - Dark Navy: `#032147` (headings)
 - Gray Text: `#888888`
 
+## Frontend stack
+
+- Next.js (TypeScript), statically exported — no server-side runtime in production
+- shadcn/ui components, Tailwind CSS
+- Zustand for state (auth token persisted to localStorage, NDA form data in memory)
+- react-hook-form + Zod for form validation
+- Direct `fetch` calls to the FastAPI backend — **tRPC is not used**
+
 ## Implementation Status
+
+### Done (PL-4)
+
+- Single-container Docker setup with multi-stage Dockerfile
+- SQLite DB with `users` table, initialised on startup
+- JWT auth: `POST /api/auth/signup`, `POST /api/auth/login` (bcrypt + python-jose)
+- Login and signup pages; `AuthGuard` client-side route protection
+- Mutual NDA form → preview → PDF download (WeasyPrint)
+- Start/stop scripts for Mac, Linux, Windows
+
+### Not yet built
+
+- AI chat for document drafting
+- Additional document types (CSA, SLA, DPA, PSA, BAA, etc.)
+- Document persistence (saving/loading past agreements)
+- User profile / document management UI
