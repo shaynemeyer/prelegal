@@ -98,11 +98,24 @@ bun dev
 # Runs on http://localhost:3000
 ```
 
+## Testing
+
+```bash
+# Backend (from backend/)
+uv run pytest --cov=app --cov-report=term-missing   # 92% coverage
+
+# Frontend (from frontend/)
+bun playwright test                                  # 19 e2e tests
+```
+
+See [`docs/test-coverage-report.md`](docs/test-coverage-report.md) for full coverage details and gap analysis.
+
 ## Progress
 
 - [x] Legal document template dataset (12 templates)
 - [x] V1 foundation: Docker, SQLite, JWT auth, start/stop scripts
 - [x] Mutual NDA creator (form → preview → PDF download)
+- [x] Backend tests (92% coverage) and frontend e2e tests (19 flows)
 - [ ] Additional document creators
 - [ ] AI chat for document drafting
 - [ ] Document persistence

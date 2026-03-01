@@ -1,3 +1,6 @@
+from contextlib import asynccontextmanager
+from typing import AsyncIterator
+
 import aiosqlite
 
 from app.config import DATABASE_PATH
@@ -18,5 +21,7 @@ async def init_db() -> None:
         await db.commit()
 
 
-async def get_db() -> aiosqlite.Connection:
-    return await aiosqlite.connect(DATABASE_PATH)
+@asynccontextmanager
+async def get_db() -> AsyncIterator[aiosqlite.Connection]:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        yield db

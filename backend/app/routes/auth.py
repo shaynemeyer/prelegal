@@ -24,7 +24,7 @@ class TokenResponse(BaseModel):
 
 @router.post("/signup", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def signup(body: SignupRequest) -> TokenResponse:
-    async with await get_db() as db:
+    async with get_db() as db:
         row = await db.execute("SELECT id FROM users WHERE email = ?", (body.email,))
         if await row.fetchone():
             raise HTTPException(status_code=400, detail="Email already registered")
@@ -43,7 +43,7 @@ async def signup(body: SignupRequest) -> TokenResponse:
 
 @router.post("/login", response_model=TokenResponse)
 async def login(body: LoginRequest) -> TokenResponse:
-    async with await get_db() as db:
+    async with get_db() as db:
         row = await db.execute(
             "SELECT id, password_hash FROM users WHERE email = ?", (body.email,)
         )

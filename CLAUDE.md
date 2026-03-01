@@ -16,8 +16,22 @@ When instructed to build a feature:
 
 1. Use your Atlassian tools to read the feature instructions from Jira
 2. Develop the feature - do not skip any step from the feature-dev 7 step process
-3. Thoroughly test the feature with unit tests and integration tests and fix any issues
-4. Submit a PR using your github tools
+3. Write tests — backend unit + integration tests (pytest) AND frontend e2e tests (Playwright). Target ≥80% coverage. Do NOT skip this step.
+4. Run all tests and fix any failures before opening a PR
+5. Submit a PR using your github tools
+
+## Testing
+
+See `docs/test-coverage-report.md` for full coverage details and gap analysis.
+
+**Backend** (`backend/tests/`): pytest + pytest-asyncio + httpx `AsyncClient`. Run with `uv run pytest`.
+
+- Each test gets a fresh SQLite DB via `tmp_path` + `monkeypatch` on `app.database.DATABASE_PATH`
+- Target ≥80% coverage: `uv run pytest --cov=app --cov-report=term-missing`
+
+**Frontend** (`frontend/tests/`): Playwright. Run with `bun playwright test`.
+
+- Target ≥80% coverage of user-facing flows
 
 ## AI design
 
