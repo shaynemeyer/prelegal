@@ -47,7 +47,7 @@ The AI assistant knows the fields required for each document type, always asks f
 | Database       | SQLite                              |
 | Auth           | JWT (python-jose + bcrypt)          |
 | AI             | OpenRouter (openai SDK)             |
-| PDF generation | WeasyPrint                          |
+| PDF generation | Playwright (headless Chromium)      |
 | Deployment     | Single Docker container             |
 
 ## Running

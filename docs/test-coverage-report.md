@@ -2,7 +2,7 @@
 
 **Generated:** 2026-03-01
 **Backend:** `uv run pytest --cov=app --cov-report=term-missing`
-**Frontend:** `bun playwright test` (Playwright e2e, 33 tests)
+**Frontend:** `bun playwright test` (Playwright e2e, 41 tests)
 
 ---
 
@@ -10,10 +10,10 @@
 
 | Layer | Tests | Passing | Coverage |
 | --- | --- | --- | --- |
-| Backend (pytest) | 130 | 130 | 92% |
+| Backend (pytest) | 130 | 130 | 89% |
 | Frontend (Playwright e2e) | 41 | 41 | All user flows covered |
 
-Backend exceeds the ≥80% target at 92%. The remaining 8% is confined to four narrow areas: the WeasyPrint entry points (`generate_nda_pdf`, `generate_document_pdf`), static-file mount logic in `main.py`, and minor untested branches in `logger.py` and `routes/root.py`.
+Backend exceeds the ≥80% target at 89%. The remaining 11% is confined to four narrow areas: the Playwright PDF entry points (`generate_nda_pdf`, `generate_document_pdf`, `html_to_pdf`), static-file mount logic in `main.py`, and minor untested branches in `logger.py` and `routes/root.py`.
 
 ---
 
@@ -32,12 +32,13 @@ app/routes/health.py               100%    (5/5 stmts)
 app/services/__init__.py           100%
 app/logger.py                       92%   miss: line 19 (json_logs=True branch)
 app/routes/nda.py                   93%   miss: lines 36-37 (generate_pdf body)
-app/services/document_service.py    80%   miss: line 166, 231-242 (WeasyPrint call)
+app/services/document_service.py    80%   miss: line 166, 231-242 (Playwright call)
 app/main.py                         83%   miss: lines 21-24, 47
 app/routes/root.py                  80%   miss: line 8
-app/services/pdf_service.py         84%   miss: lines 178-188 (WeasyPrint call)
+app/services/pdf_service.py         84%   miss: lines 178-188 (Playwright call)
+app/services/pdf_utils.py            0%   miss: lines 2-17 (html_to_pdf — needs browser)
 ─────────────────────────────────────────
-TOTAL                               92%   (298/325 stmts)
+TOTAL                               89%   (298/334 stmts)
 ```
 
 ### Coverage by test file
@@ -60,9 +61,9 @@ pie title Backend test distribution (130 tests)
 ```mermaid
 xychart-beta
     title "Backend module coverage (%)"
-    x-axis ["ai", "auth", "cfg", "db", "r/auth", "r/chat", "r/doc", "hlth", "log", "r/nda", "main", "root", "doc-svc", "pdf"]
+    x-axis ["ai", "auth", "cfg", "db", "r/auth", "r/chat", "r/doc", "hlth", "log", "r/nda", "main", "root", "doc-svc", "pdf", "pdf-utils"]
     y-axis "Coverage (%)" 0 --> 100
-    bar [100, 100, 100, 100, 100, 100, 100, 100, 92, 93, 83, 80, 80, 84]
+    bar [100, 100, 100, 100, 100, 100, 100, 100, 92, 93, 83, 80, 80, 84, 0]
 ```
 
 | Label | Module |
@@ -81,12 +82,13 @@ xychart-beta
 | root | `app/routes/root.py` |
 | doc-svc | `app/services/document_service.py` |
 | pdf | `app/services/pdf_service.py` |
+| pdf-utils | `app/services/pdf_utils.py` |
 
 ---
 
 ## Frontend Coverage (Playwright e2e)
 
-33 tests across 3 spec files cover all primary user flows.
+41 tests across 3 spec files cover all primary user flows.
 
 ```mermaid
 pie title Frontend test distribution (41 tests)
@@ -118,7 +120,7 @@ flowchart TD
     G -->|click Sign in| C
 
     D -->|select Mutual NDA| J[NDA creator tabs]
-    D -->|select other doc type| K2[DocumentChat]
+    D -->|select other doc type| K2[DocumentPageTabs]
     D -->|click Back| D
 
     J -->|Fill in Form tab| J1[NDA form]
@@ -132,13 +134,22 @@ flowchart TD
     O -->|key fields not yet collected| P[button disabled]
     O -->|key fields collected| N
 
-    K2 -->|AI collects fields| K3{Download PDF button}
+    K2 -->|Fill in Form tab| K6[DocumentForm]
+    K2 -->|Chat with AI tab| K2b[AI chat interface]
+    K6 -->|fill form fields| K7{Preview button}
+    K7 -->|missing required fields| K8[validation errors]
+    K7 -->|all fields valid| K9["/doc-preview"]
+    K2b -->|AI collects fields| K3{Download PDF button}
     K3 -->|minimum fields not collected| K4[button disabled]
     K3 -->|minimum fields collected| K5[PDF download]
 
     N -->|click Edit| D
     N -->|click Download PDF| Q[PDF download]
     N -->|no form data| R[fallback message]
+
+    K9 -->|click Edit| D
+    K9 -->|click Download PDF| Q
+    K9 -->|no form data| R
 
     style C fill:#d4f5d4
     style G fill:#d4f5d4
@@ -147,8 +158,13 @@ flowchart TD
     style J1 fill:#d4f5d4
     style K fill:#d4f5d4
     style K2 fill:#d4f5d4
+    style K2b fill:#d4f5d4
     style K3 fill:#d4f5d4
     style K4 fill:#d4f5d4
+    style K6 fill:#d4f5d4
+    style K7 fill:#d4f5d4
+    style K8 fill:#d4f5d4
+    style K9 fill:#d4f5d4
     style N fill:#d4f5d4
     style F fill:#d4f5d4
     style I fill:#d4f5d4
@@ -167,42 +183,45 @@ flowchart TD
 
 ### Backend gaps
 
-#### 1. `pdf_service.py` — 84% (lines 178-188, `generate_nda_pdf`)
+#### 1. `pdf_utils.py` — 0% (lines 2-17, `html_to_pdf`)
 
-All pure helper functions are covered by `test_pdf_service.py` (28 tests). The remaining gap is the `generate_nda_pdf` async function, which calls WeasyPrint directly:
+`html_to_pdf` launches a real Playwright browser to render HTML. It is not covered in the test suite because spinning up a headless Chromium instance in CI adds significant overhead and environment requirements. All callers (`generate_nda_pdf`, `generate_document_pdf`) are tested via mocking.
+
+#### 2. `pdf_service.py` — 84% (lines 178-188, `generate_nda_pdf`)
+
+All pure helper functions are covered by `test_pdf_service.py` (28 tests). The remaining gap is the `generate_nda_pdf` async function, which calls `html_to_pdf`:
 
 ```python
 async def generate_nda_pdf(data: object) -> bytes:
-    from weasyprint import HTML          # line 180 — miss
+    from app.services.pdf_utils import html_to_pdf   # line 180 — miss
     ...
-    pdf_bytes = HTML(string=full_html).write_pdf()  # miss
+    pdf_bytes = await html_to_pdf(full_html)          # miss
 ```
 
-**Root cause:** WeasyPrint requires system libraries (`libpango`, fonts) not guaranteed in the test environment. The NDA endpoint itself (`routes/nda.py` lines 36-37) is also uncovered for the same reason.
+The NDA endpoint itself (`routes/nda.py` lines 36-37) is also uncovered for the same reason.
 
-#### 2. `document_service.py` — 80% (line 166, 231-242)
+#### 3. `document_service.py` — 80% (line 166, 231-242)
 
-Same as above — `generate_document_pdf` calls WeasyPrint:
+Same as above — `generate_document_pdf` calls `html_to_pdf`:
 
 ```python
 async def generate_document_pdf(doc_type: str, fields: dict) -> bytes:
-    ...
-    from weasyprint import HTML          # line 231 — miss
-    pdf_bytes = HTML(string=full_html).write_pdf()  # miss
+    from app.services.pdf_utils import html_to_pdf   # line 231 — miss
+    pdf_bytes = await html_to_pdf(full_html)          # miss
 ```
 
 All pure helpers (`_build_generic_cover_html`, `_build_standard_terms_html`) are covered.
 
-#### 3. `main.py` — 83% (lines 21-24, 47)
+#### 4. `main.py` — 83% (lines 21-24, 47)
 
 - **Lines 21-24:** Warning branch `if JWT_SECRET_KEY == "change-me-in-production"` — not triggered in tests.
 - **Line 47:** `app.mount(StaticFiles(...))` — skipped because `static/` doesn't exist during tests.
 
-#### 4. `logger.py` — 92% (line 19)
+#### 5. `logger.py` — 92% (line 19)
 
 - **Line 19:** The `json_logs=True` branch in `configure_logging`. Tests call it with default args only.
 
-#### 5. `routes/root.py` — 80% (line 8)
+#### 6. `routes/root.py` — 80% (line 8)
 
 - **Line 8:** `return {"message": "Prelegal API"}` — `GET /` is not called by any test.
 
@@ -218,9 +237,14 @@ All pure helpers (`_build_generic_cover_html`, `_build_standard_terms_html`) are
 | Login/Signup cross-links | Covered | |
 | Document selector renders all types | Covered | |
 | Selecting NDA shows form+chat tabs | Covered | |
-| Selecting non-NDA shows DocumentChat | Covered | |
+| Selecting non-NDA shows form+chat tabs | Covered | |
 | Back button returns to selector | Covered | |
 | Non-NDA PDF button disabled initially | Covered | |
+| Non-NDA form submits to /doc-preview | Covered | |
+| /doc-preview shows cover data | Covered | |
+| /doc-preview fallback (no data) | Covered | |
+| /doc-preview Edit button returns to / | Covered | |
+| /doc-preview Download PDF visible | Covered | |
 | NDA form renders | Covered | |
 | NDA validation errors | Covered | |
 | NDA → Preview navigation | Covered | |
@@ -234,7 +258,7 @@ All pure helpers (`_build_generic_cover_html`, `_build_standard_terms_html`) are
 | Send button state (disabled/enabled) | Covered | |
 | Preview NDA button disabled initially | Covered | |
 | Tab switching works | Covered | |
-| **PDF download completes** | **Not covered** | Requires backend running with WeasyPrint |
+| **PDF download completes** | **Not covered** | Requires backend running with Playwright Chromium |
 | **AI fills form fields via chat** | **Not covered** | Requires live OpenRouter API key |
 | **Token expiry / re-login** | **Not covered** | JWT expiry not simulated |
 | **Logout** | **Not covered** | No logout UI exists yet |
@@ -245,9 +269,9 @@ All pure helpers (`_build_generic_cover_html`, `_build_standard_terms_html`) are
 
 ### High priority
 
-#### B2 — Test `POST /api/nda/generate-pdf` with WeasyPrint mocked
+#### B2 — Test `POST /api/nda/generate-pdf` with pdf_utils mocked
 
-Mock `generate_nda_pdf` to cover `routes/nda.py` lines 36-37 without the system dependency:
+Mock `generate_nda_pdf` (or `html_to_pdf`) to cover `routes/nda.py` lines 36-37 without launching a browser:
 
 ```python
 # backend/tests/test_nda_routes.py
@@ -311,7 +335,7 @@ test('download PDF triggers file download', async ({ page }) => {
 });
 ```
 
-> Requires backend running with WeasyPrint available (integration environment only).
+> Requires backend running with `playwright install chromium` completed (integration environment only).
 
 #### F2 — Test AI fills form fields end-to-end
 
@@ -344,12 +368,12 @@ No logout UI exists yet. Add this test when the feature is built.
 ```mermaid
 xychart-beta
     title "Backend total coverage progress (%)"
-    x-axis ["Before PL-4", "After PL-4 (v1)", "After PL-5", "After PL-6 (now)", "After B2+B3 (projected)"]
+    x-axis ["Before PL-4", "After PL-4 (v1)", "After PL-5", "After PL-6", "After B2+B3 (projected)"]
     y-axis "Total coverage (%)" 70 --> 100
-    line [79, 92, 93, 92, 94]
+    line [79, 92, 93, 89, 91]
 ```
 
-> Note: Coverage is 92% (vs 93% after PL-5) because two new modules with WeasyPrint entry points were added (`document_service.py`, `document.py`). All new pure-function helpers are fully covered.
+> Note: Coverage dropped from 93% to 89% because `pdf_utils.py` (9 statements, 0% covered) was added when migrating from WeasyPrint to Playwright. The new module requires a real browser to test. All other modules are at the same coverage as before.
 
 ---
 
@@ -373,7 +397,7 @@ graph TD
     subgraph Frontend ["Frontend (Playwright e2e)"]
         P1[auth.spec.ts<br/>redirects, signup, login]
         P2[nda.spec.ts<br/>form, validation, preview]
-        P3[chat.spec.ts<br/>doc selector, chat UI, buttons]
+        P3[chat.spec.ts<br/>doc selector, chat UI, buttons, doc-preview]
     end
 
     subgraph App ["Running app"]
