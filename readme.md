@@ -54,7 +54,7 @@ A full-stack web app for generating a Mutual NDA:
 Requires [Docker](https://docs.docker.com/get-docker/).
 
 ```bash
-# Mac / Linux
+# Mac
 ./scripts/start-mac.sh     # builds image and starts container
 ./scripts/stop-mac.sh      # stops and removes container
 
@@ -73,6 +73,14 @@ To use a custom port:
 
 ```bash
 PORT=9000 ./scripts/start-mac.sh
+```
+
+To run without the scripts:
+
+```bash
+docker build -t prelegal .
+docker run -d --name prelegal -p 8000:8000 -v prelegal-data:/data prelegal
+docker stop prelegal && docker rm prelegal   # stop
 ```
 
 ### Local development
