@@ -231,12 +231,12 @@ async def generate_document_pdf(doc_type: str, fields: dict) -> bytes:
     doc_name = _DOC_NAMES.get(doc_type, doc_type)
     logger.info("Generating document PDF", doc_type=doc_type)
 
-    from weasyprint import HTML
+    from app.services.pdf_utils import html_to_pdf
 
     cover_html = _build_generic_cover_html(doc_type, fields)
     terms_html = _build_standard_terms_html(template_file)
     full_html = _build_full_html(cover_html, terms_html, doc_name)
 
-    pdf_bytes = HTML(string=full_html).write_pdf()
+    pdf_bytes = await html_to_pdf(full_html)
     logger.info("PDF generated successfully", doc_type=doc_type)
     return pdf_bytes

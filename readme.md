@@ -95,21 +95,10 @@ Run backend and frontend in separate terminals.
 ```bash
 cd backend
 uv sync
+uv run playwright install chromium   # one-time: installs headless Chromium for PDF generation
 uv run uvicorn app.main:app --reload
 # Runs on http://localhost:8000
 ```
-
-> **macOS — WeasyPrint system libraries required**
->
-> PDF generation uses [WeasyPrint](https://weasyprint.org), which depends on system libraries (Pango, Cairo, GLib) that are not included with macOS. Without them the PDF endpoints crash silently and the browser reports a misleading CORS error.
->
-> Install once via Homebrew before starting the backend:
->
-> ```bash
-> brew install weasyprint
-> ```
->
-> This installs all required system libraries. Docker already includes them — this step is only needed for local development on macOS.
 
 **Terminal 2 — frontend:**
 
