@@ -96,3 +96,5 @@ coverage/
 *.bak
 *.tmp
 .cache/
+
+**/prelegal.db
