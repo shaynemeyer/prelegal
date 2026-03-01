@@ -114,11 +114,17 @@ export function DocumentForm({ docType, docName }: DocumentFormProps) {
   const setDocument = useDocumentStore((s) => s.setDocument);
   const schema = DOC_SCHEMAS[docType];
 
+  const emptyParty = { printName: "", title: "", company: "", noticeAddress: "", date: "" };
+  const coverDefaults = schema
+    ? Object.fromEntries(schema.coverFields.map((f) => [f.key, f.type === "date" ? new Date().toISOString().split("T")[0] : ""]))
+    : { effectiveDate: new Date().toISOString().split("T")[0] };
+  const partyDefaults = schema
+    ? { [schema.party1Key]: emptyParty, [schema.party2Key]: emptyParty }
+    : {};
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const form = useForm<any>({
-    defaultValues: {
-      effectiveDate: new Date().toISOString().split("T")[0],
-    },
+    defaultValues: { ...coverDefaults, ...partyDefaults },
   });
 
   if (!schema) {
