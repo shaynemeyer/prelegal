@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
@@ -7,7 +8,6 @@ import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useNdaStore } from "@/store/useNdaStore";
-import { trpc } from "@/trpc/react";
 import type { NdaFormData } from "@/lib/schemas/nda";
 
 interface NdaPreviewProps {
@@ -124,19 +124,62 @@ function CoverPageTable({ data }: { data: NdaFormData }) {
 export function NdaPreview({ standardTerms }: NdaPreviewProps) {
   const router = useRouter();
   const formData = useNdaStore((s) => s.formData);
+  const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const generatePdf = trpc.nda.generatePdf.useMutation({
-    onSuccess: ({ pdfBase64 }) => {
-      const bytes = Uint8Array.from(atob(pdfBase64), (c) => c.charCodeAt(0));
-      const blob = new Blob([bytes], { type: "application/pdf" });
+  async function handleDownload() {
+    if (!formData) return;
+    setIsPending(true);
+    setError(null);
+    try {
+      const payload = {
+        purpose: formData.purpose,
+        effective_date: formData.effectiveDate,
+        mnda_term_type: formData.mndaTermType,
+        mnda_term_years: formData.mndaTermYears ?? null,
+        confidentiality_type: formData.confidentialityType,
+        confidentiality_years: formData.confidentialityYears ?? null,
+        governing_law: formData.governingLaw,
+        jurisdiction: formData.jurisdiction,
+        modifications: formData.modifications ?? null,
+        party1: {
+          print_name: formData.party1.printName,
+          title: formData.party1.title,
+          company: formData.party1.company,
+          notice_address: formData.party1.noticeAddress,
+          date: formData.party1.date,
+        },
+        party2: {
+          print_name: formData.party2.printName,
+          title: formData.party2.title,
+          company: formData.party2.company,
+          notice_address: formData.party2.noticeAddress,
+          date: formData.party2.date,
+        },
+      };
+
+      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
+      const res = await fetch(`${apiBase}/api/nda/generate-pdf`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("PDF generation failed");
+
+      const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = "mutual-nda.pdf";
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 100);
-    },
-  });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "PDF generation failed");
+    } finally {
+      setIsPending(false);
+    }
+  }
 
   if (!formData) {
     return (
@@ -155,17 +198,14 @@ export function NdaPreview({ standardTerms }: NdaPreviewProps) {
         <Button variant="outline" onClick={() => router.push("/")}>
           ← Edit
         </Button>
-        <Button
-          onClick={() => generatePdf.mutate(formData)}
-          disabled={generatePdf.isPending}
-        >
-          {generatePdf.isPending ? "Generating…" : "Download PDF"}
+        <Button onClick={handleDownload} disabled={isPending}>
+          {isPending ? "Generating…" : "Download PDF"}
         </Button>
       </div>
 
-      {generatePdf.isError && (
+      {error && (
         <p className="text-sm text-destructive bg-destructive/10 px-4 py-2 rounded">
-          {generatePdf.error.message}
+          {error}
         </p>
       )}
 
