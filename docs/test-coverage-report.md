@@ -11,7 +11,7 @@
 | Layer | Tests | Passing | Coverage |
 | --- | --- | --- | --- |
 | Backend (pytest) | 130 | 130 | 92% |
-| Frontend (Playwright e2e) | 35 | 35 | All user flows covered |
+| Frontend (Playwright e2e) | 41 | 41 | All user flows covered |
 
 Backend exceeds the ≥80% target at 92%. The remaining 8% is confined to four narrow areas: the WeasyPrint entry points (`generate_nda_pdf`, `generate_document_pdf`), static-file mount logic in `main.py`, and minor untested branches in `logger.py` and `routes/root.py`.
 
@@ -89,13 +89,14 @@ xychart-beta
 33 tests across 3 spec files cover all primary user flows.
 
 ```mermaid
-pie title Frontend test distribution (35 tests)
+pie title Frontend test distribution (41 tests)
     "Auth redirects" : 2
     "Signup" : 4
     "Login" : 4
     "Document selector" : 6
     "NDA form & preview" : 11
     "AI chat tab" : 8
+    "Document form & preview" : 6
 ```
 
 ### User flow coverage

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm, type Control } from "react-hook-form";
 import {
   Form,
@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { DOC_SCHEMAS } from "@/lib/documentSchemas";
+import { useDocumentStore } from "@/store/useDocumentStore";
 
 interface DocumentFormProps {
   docType: string;
@@ -109,9 +110,9 @@ function PartyFields({ control, partyKey, label }: { control: Control<any>; part
 }
 
 export function DocumentForm({ docType, docName }: DocumentFormProps) {
+  const router = useRouter();
+  const setDocument = useDocumentStore((s) => s.setDocument);
   const schema = DOC_SCHEMAS[docType];
-  const [downloading, setDownloading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const form = useForm<any>({
@@ -124,29 +125,9 @@ export function DocumentForm({ docType, docName }: DocumentFormProps) {
     return <p className="text-muted-foreground">Form not available for this document type.</p>;
   }
 
-  async function onSubmit(data: Record<string, unknown>) {
-    setDownloading(true);
-    setError(null);
-    try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
-      const res = await fetch(`${apiBase}/api/documents/generate-pdf`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ doc_type: docType, fields: data }),
-      });
-      if (!res.ok) throw new Error("PDF generation failed");
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${docName.toLowerCase().replace(/\s+/g, "-")}.pdf`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 100);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "PDF generation failed");
-    } finally {
-      setDownloading(false);
-    }
+  function onSubmit(data: Record<string, unknown>) {
+    setDocument(docType, docName, data);
+    router.push("/doc-preview");
   }
 
   return (
@@ -203,11 +184,9 @@ export function DocumentForm({ docType, docName }: DocumentFormProps) {
 
         <Separator />
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
-
         <div className="flex justify-end">
-          <Button type="submit" size="lg" disabled={downloading}>
-            {downloading ? "Generating PDF..." : `Download ${docName} PDF`}
+          <Button type="submit" size="lg">
+            Preview {docName} →
           </Button>
         </div>
       </form>

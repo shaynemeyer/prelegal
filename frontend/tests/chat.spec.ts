@@ -111,3 +111,69 @@ test.describe("Document selector", () => {
     await expect(page.getByRole("heading", { name: "Create a Legal Document" })).toBeVisible();
   });
 });
+
+async function fillPilotForm(page: import("@playwright/test").Page) {
+  await page.getByLabel("Pilot Duration").fill("90 days");
+  await page.getByLabel("Pilot Scope").fill("Evaluate the product for enterprise use");
+  await page.getByLabel("Governing Law (State)").fill("California");
+  await page.getByLabel("Jurisdiction").fill("San Francisco County");
+
+  // Provider (party 1)
+  await page.locator("input[name='provider.printName']").fill("Alice Smith");
+  await page.locator("input[name='provider.company']").fill("Acme Corp");
+
+  // Customer (party 2)
+  await page.locator("input[name='customer.printName']").fill("Bob Jones");
+  await page.locator("input[name='customer.company']").fill("Widget Inc");
+}
+
+test.describe("Document form and preview", () => {
+  test("submitting completed form navigates to doc preview", async ({ page }) => {
+    await signUp(page);
+    await page.getByRole("button", { name: "Pilot Agreement" }).click();
+    await fillPilotForm(page);
+    await page.getByRole("button", { name: /Preview Pilot Agreement/ }).click();
+    await expect(page).toHaveURL("/doc-preview");
+    await expect(page.getByRole("heading", { name: "Pilot Agreement Preview" })).toBeVisible();
+  });
+
+  test("preview shows the document heading and party data", async ({ page }) => {
+    await signUp(page);
+    await page.getByRole("button", { name: "Pilot Agreement" }).click();
+    await fillPilotForm(page);
+    await page.getByRole("button", { name: /Preview Pilot Agreement/ }).click();
+    await expect(page.getByText("Acme Corp").first()).toBeVisible();
+    await expect(page.getByText("Widget Inc").first()).toBeVisible();
+  });
+
+  test("preview has a Download PDF button", async ({ page }) => {
+    await signUp(page);
+    await page.getByRole("button", { name: "Pilot Agreement" }).click();
+    await fillPilotForm(page);
+    await page.getByRole("button", { name: /Preview Pilot Agreement/ }).click();
+    await expect(page.getByRole("button", { name: /Download PDF/i })).toBeVisible();
+  });
+
+  test("edit button on preview returns to form", async ({ page }) => {
+    await signUp(page);
+    await page.getByRole("button", { name: "Pilot Agreement" }).click();
+    await fillPilotForm(page);
+    await page.getByRole("button", { name: /Preview Pilot Agreement/ }).click();
+    await page.getByRole("button", { name: /← Edit/i }).click();
+    await expect(page).toHaveURL("/");
+  });
+
+  test("direct navigation to /doc-preview without data shows fallback", async ({ page }) => {
+    await signUp(page);
+    await page.goto("/doc-preview");
+    await expect(page.getByText("No document data found")).toBeVisible();
+  });
+
+  test("submitting without required fields shows validation errors", async ({ page }) => {
+    await signUp(page);
+    await page.getByRole("button", { name: "Pilot Agreement" }).click();
+    await page.getByRole("button", { name: /Preview Pilot Agreement/ }).click();
+    await expect(page.getByText("Pilot Duration is required")).toBeVisible();
+    await expect(page.getByText("Pilot Scope is required")).toBeVisible();
+  });
+});
