@@ -61,6 +61,20 @@ async def save_document(
     return {"id": cursor.lastrowid}
 
 
+@router.delete("/{doc_id}", status_code=204)
+async def delete_document(doc_id: int, user: dict = Depends(get_current_user)) -> None:
+    """Delete a document belonging to the current user."""
+    user_id = int(user["sub"])
+    async with get_db() as db:
+        row = await db.execute(
+            "SELECT id FROM documents WHERE id = ? AND user_id = ?", (doc_id, user_id)
+        )
+        if not await row.fetchone():
+            raise HTTPException(status_code=404, detail="Document not found")
+        await db.execute("DELETE FROM documents WHERE id = ?", (doc_id,))
+        await db.commit()
+
+
 @router.get("", response_model=list[DocumentRecord])
 async def list_documents(user: dict = Depends(get_current_user)) -> list[DocumentRecord]:
     """Return the current user's document history, newest first."""

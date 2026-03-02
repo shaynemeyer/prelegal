@@ -17,11 +17,11 @@ import { PartySection } from "./PartySection";
 
 export function NdaForm() {
   const router = useRouter();
-  const setFormData = useNdaStore((s) => s.setFormData);
+  const { setFormData, formData: savedFormData } = useNdaStore();
 
   const form = useForm<NdaFormData>({
     resolver: zodResolver(ndaFormSchema),
-    defaultValues: {
+    defaultValues: savedFormData ?? {
       purpose: "Evaluating whether to enter into a business relationship with the other party.",
       effectiveDate: new Date().toISOString().split("T")[0],
       mndaTermType: "expires",

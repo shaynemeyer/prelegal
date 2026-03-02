@@ -142,3 +142,70 @@ async def test_save_document_persists_fields(client):
 
     res = await client.get("/api/documents", headers=headers)
     assert res.json()[0]["fields"] == fields
+
+
+# ---------------------------------------------------------------------------
+# Document history — delete
+# ---------------------------------------------------------------------------
+
+async def _save_doc(client, token, doc_type="csa", doc_name="CSA") -> int:
+    res = await client.post(
+        "/api/documents",
+        json={"doc_type": doc_type, "doc_name": doc_name, "fields": {}},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    return res.json()["id"]
+
+
+@pytest.mark.asyncio
+async def test_delete_document_requires_auth(client):
+    token = await _signup_and_token(client)
+    doc_id = await _save_doc(client, token)
+    res = await client.delete(f"/api/documents/{doc_id}")
+    assert res.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_delete_document_returns_204(client):
+    token = await _signup_and_token(client)
+    doc_id = await _save_doc(client, token)
+    res = await client.delete(
+        f"/api/documents/{doc_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert res.status_code == 204
+
+
+@pytest.mark.asyncio
+async def test_delete_document_removes_from_list(client):
+    token = await _signup_and_token(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    doc_id = await _save_doc(client, token)
+
+    await client.delete(f"/api/documents/{doc_id}", headers=headers)
+
+    res = await client.get("/api/documents", headers=headers)
+    assert res.json() == []
+
+
+@pytest.mark.asyncio
+async def test_delete_document_not_found_returns_404(client):
+    token = await _signup_and_token(client)
+    res = await client.delete(
+        "/api/documents/99999",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert res.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_delete_document_wrong_user_returns_404(client):
+    token_a = await _signup_and_token(client, "owner@example.com")
+    token_b = await _signup_and_token(client, "other@example.com")
+    doc_id = await _save_doc(client, token_a)
+
+    res = await client.delete(
+        f"/api/documents/{doc_id}",
+        headers={"Authorization": f"Bearer {token_b}"},
+    )
+    assert res.status_code == 404

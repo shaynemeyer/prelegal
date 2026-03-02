@@ -35,3 +35,13 @@ export async function apiGet<T>(path: string, token?: string | null): Promise<T>
 
   return res.json();
 }
+
+export async function apiDelete(path: string, token?: string | null): Promise<void> {
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const res = await fetch(`${API_BASE}${path}`, { method: "DELETE", headers });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: "Request failed" }));
+    throw new Error(err.detail ?? "Request failed");
+  }
+}

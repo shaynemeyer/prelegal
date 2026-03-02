@@ -111,7 +111,7 @@ function PartyFields({ control, partyKey, label }: { control: Control<any>; part
 
 export function DocumentForm({ docType, docName }: DocumentFormProps) {
   const router = useRouter();
-  const setDocument = useDocumentStore((s) => s.setDocument);
+  const { setDocument, docType: storedDocType, fields: storedFields } = useDocumentStore();
   const schema = DOC_SCHEMAS[docType];
 
   const emptyParty = { printName: "", title: "", company: "", noticeAddress: "", date: "" };
@@ -122,9 +122,11 @@ export function DocumentForm({ docType, docName }: DocumentFormProps) {
     ? { [schema.party1Key]: emptyParty, [schema.party2Key]: emptyParty }
     : {};
 
+  const savedDefaults = storedDocType === docType && storedFields ? storedFields : {};
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const form = useForm<any>({
-    defaultValues: { ...coverDefaults, ...partyDefaults },
+    defaultValues: { ...coverDefaults, ...partyDefaults, ...savedDefaults },
   });
 
   if (!schema) {
