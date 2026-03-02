@@ -1,8 +1,8 @@
 # Test Coverage Report
 
-**Generated:** 2026-03-02 (updated after PL-10)
+**Generated:** 2026-03-02 (updated after PL-14)
 **Backend:** `uv run pytest --cov=app --cov-report=term-missing`
-**Frontend:** `bun playwright test` (Playwright e2e, 56 tests)
+**Frontend:** `bun playwright test` (Playwright e2e, 60 tests)
 
 ---
 
@@ -11,7 +11,7 @@
 | Layer | Tests | Passing | Coverage |
 | --- | --- | --- | --- |
 | Backend (pytest) | 160 | 160 | 99% |
-| Frontend (Playwright e2e) | 56 | 56 | All user flows covered |
+| Frontend (Playwright e2e) | 60 | 60 | All user flows covered |
 
 Backend is at 99%. The remaining 1% (5 statements in `main.py`) is the JWT warning branch inside the ASGI lifespan and the StaticFiles mount — both require environment setup outside the test runner.
 
@@ -89,14 +89,14 @@ xychart-beta
 
 ## Frontend Coverage (Playwright e2e)
 
-56 tests across 5 spec files cover all primary user flows.
+60 tests across 6 spec files cover all primary user flows.
 
 ```mermaid
-pie title Frontend test distribution (56 tests)
+pie title Frontend test distribution (60 tests)
     "Auth redirects & inactivity" : 3
     "Signup" : 4
     "Login" : 4
-    "Document selector" : 6
+    "Document selector" : 10
     "NDA form & preview" : 11
     "AI chat tab" : 8
     "Document form & preview" : 6
@@ -123,8 +123,8 @@ flowchart TD
     H -->|success| D
     G -->|click Sign in| C
 
-    D -->|select Mutual NDA| J[NDA creator tabs]
-    D -->|select other doc type| K2[DocumentPageTabs]
+    D -->|Select dropdown → Mutual NDA| J[NDA creator tabs]
+    D -->|Select dropdown → other doc type| K2[DocumentPageTabs]
     D -->|click Back| D
 
     J -->|Fill in Form tab| J1[NDA form]
@@ -204,7 +204,7 @@ These are infrastructure concerns rather than application logic and are not wort
 | Login happy path | Covered | |
 | Login wrong password | Covered | |
 | Login/Signup cross-links | Covered | |
-| Document selector renders all types | Covered | |
+| Document selector renders all types | Covered | shadcn Select dropdown — PL-14 |
 | Selecting NDA shows form+chat tabs | Covered | |
 | Selecting non-NDA shows form+chat tabs | Covered | |
 | Back button returns to selector | Covered | |
@@ -243,9 +243,9 @@ These are infrastructure concerns rather than application logic and are not wort
 ```mermaid
 xychart-beta
     title "Backend total coverage progress (%)"
-    x-axis ["Before PL-4", "After PL-4 (v1)", "After PL-5", "After PL-6", "After PL-6 (142 tests)", "After PL-7 (150 tests)", "After PL-8 (155 tests)", "After PL-10 (160 tests)"]
+    x-axis ["Before PL-4", "After PL-4 (v1)", "After PL-5", "After PL-6", "After PL-6 (142 tests)", "After PL-7 (150 tests)", "After PL-8 (155 tests)", "After PL-10 (160 tests)", "After PL-14 (160 tests)"]
     y-axis "Total coverage (%)" 70 --> 100
-    line [79, 92, 93, 89, 99, 99, 99, 99]
+    line [79, 92, 93, 89, 99, 99, 99, 99, 99]
 ```
 
 ---
@@ -275,6 +275,7 @@ graph TD
         P3[chat.spec.ts<br/>doc selector, chat UI, buttons, doc-preview]
         P4[save.spec.ts<br/>save button in chat, form preview]
         P5[documents-table.spec.ts<br/>My Documents table, edit, delete]
+        P6[document-selector.spec.ts<br/>Select dropdown, all options, navigation — PL-14]
     end
 
     subgraph App ["Running app"]

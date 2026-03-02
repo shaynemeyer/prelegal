@@ -11,9 +11,14 @@ async function signUp(page: import("@playwright/test").Page) {
   await expect(page).toHaveURL("/");
 }
 
+async function selectDocument(page: import("@playwright/test").Page, name: string) {
+  await page.getByRole("combobox", { name: "Document type" }).click();
+  await page.getByRole("option", { name }).click();
+}
+
 async function goToNda(page: import("@playwright/test").Page) {
   await signUp(page);
-  await page.getByRole("button", { name: "Mutual NDA" }).click();
+  await selectDocument(page, "Mutual NDA");
   await expect(page.getByRole("tab", { name: "Fill in Form" })).toBeVisible();
 }
 
@@ -44,7 +49,7 @@ test.describe("NDA form", () => {
     await expect(page.getByRole("heading", { name: "Create a Legal Document" })).toBeVisible();
   });
 
-  test("clicking Mutual NDA shows form and chat tabs", async ({ page }) => {
+  test("selecting Mutual NDA shows form and chat tabs", async ({ page }) => {
     await goToNda(page);
     await expect(page.getByRole("tab", { name: "Fill in Form" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Chat with AI" })).toBeVisible();

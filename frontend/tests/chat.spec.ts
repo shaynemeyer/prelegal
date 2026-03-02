@@ -11,23 +11,28 @@ async function signUp(page: import("@playwright/test").Page) {
   await expect(page).toHaveURL("/");
 }
 
+async function selectDocument(page: import("@playwright/test").Page, name: string) {
+  await page.getByRole("combobox", { name: "Document type" }).click();
+  await page.getByRole("option", { name }).click();
+}
+
 async function goToNdaChat(page: import("@playwright/test").Page) {
   await signUp(page);
-  await page.getByRole("button", { name: "Mutual NDA" }).click();
+  await selectDocument(page, "Mutual NDA");
   await page.getByRole("tab", { name: "Chat with AI" }).click();
 }
 
 test.describe("AI Chat tab", () => {
   test("both tabs are visible after selecting Mutual NDA", async ({ page }) => {
     await signUp(page);
-    await page.getByRole("button", { name: "Mutual NDA" }).click();
+    await selectDocument(page, "Mutual NDA");
     await expect(page.getByRole("tab", { name: "Fill in Form" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Chat with AI" })).toBeVisible();
   });
 
   test("form tab is active by default", async ({ page }) => {
     await signUp(page);
-    await page.getByRole("button", { name: "Mutual NDA" }).click();
+    await selectDocument(page, "Mutual NDA");
     const formTab = page.getByRole("tab", { name: "Fill in Form" });
     await expect(formTab).toHaveAttribute("data-state", "active");
   });
@@ -68,30 +73,31 @@ test.describe("AI Chat tab", () => {
 });
 
 test.describe("Document selector", () => {
-  test("home page shows all supported document types", async ({ page }) => {
+  test("home page shows all supported document types in dropdown", async ({ page }) => {
     await signUp(page);
-    await expect(page.getByRole("button", { name: "Mutual NDA" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Design Partner Agreement" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Partnership Agreement" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Pilot Agreement" })).toBeVisible();
+    await page.getByRole("combobox", { name: "Document type" }).click();
+    await expect(page.getByRole("option", { name: "Mutual NDA" })).toBeVisible();
+    await expect(page.getByRole("option", { name: "Design Partner Agreement" })).toBeVisible();
+    await expect(page.getByRole("option", { name: "Partnership Agreement" })).toBeVisible();
+    await expect(page.getByRole("option", { name: "Pilot Agreement" })).toBeVisible();
   });
 
   test("selecting a non-NDA document shows form and chat tabs", async ({ page }) => {
     await signUp(page);
-    await page.getByRole("button", { name: "Pilot Agreement" }).click();
+    await selectDocument(page, "Pilot Agreement");
     await expect(page.getByRole("tab", { name: "Fill in Form" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Chat with AI" })).toBeVisible();
   });
 
   test("form tab is active by default for non-NDA documents", async ({ page }) => {
     await signUp(page);
-    await page.getByRole("button", { name: "Pilot Agreement" }).click();
+    await selectDocument(page, "Pilot Agreement");
     await expect(page.getByRole("tab", { name: "Fill in Form" })).toHaveAttribute("data-state", "active");
   });
 
   test("switching to Chat with AI tab shows chat interface", async ({ page }) => {
     await signUp(page);
-    await page.getByRole("button", { name: "Pilot Agreement" }).click();
+    await selectDocument(page, "Pilot Agreement");
     await page.getByRole("tab", { name: "Chat with AI" }).click();
     await expect(page.getByPlaceholder(/Pilot Agreement/)).toBeVisible();
     await expect(page.getByRole("button", { name: "Send" })).toBeVisible();
@@ -99,14 +105,14 @@ test.describe("Document selector", () => {
 
   test("non-NDA document chat has Download PDF button disabled initially", async ({ page }) => {
     await signUp(page);
-    await page.getByRole("button", { name: "Pilot Agreement" }).click();
+    await selectDocument(page, "Pilot Agreement");
     await page.getByRole("tab", { name: "Chat with AI" }).click();
     await expect(page.getByRole("button", { name: /Download.*PDF/i })).toBeDisabled();
   });
 
   test("back button from non-NDA document returns to selector", async ({ page }) => {
     await signUp(page);
-    await page.getByRole("button", { name: "Pilot Agreement" }).click();
+    await selectDocument(page, "Pilot Agreement");
     await page.getByRole("button", { name: /← Back/i }).click();
     await expect(page.getByRole("heading", { name: "Create a Legal Document" })).toBeVisible();
   });
@@ -130,7 +136,7 @@ async function fillPilotForm(page: import("@playwright/test").Page) {
 test.describe("Document form and preview", () => {
   test("submitting completed form navigates to doc preview", async ({ page }) => {
     await signUp(page);
-    await page.getByRole("button", { name: "Pilot Agreement" }).click();
+    await selectDocument(page, "Pilot Agreement");
     await fillPilotForm(page);
     await page.getByRole("button", { name: /Preview Pilot Agreement/ }).click();
     await expect(page).toHaveURL("/doc-preview");
@@ -139,7 +145,7 @@ test.describe("Document form and preview", () => {
 
   test("preview shows the document heading and party data", async ({ page }) => {
     await signUp(page);
-    await page.getByRole("button", { name: "Pilot Agreement" }).click();
+    await selectDocument(page, "Pilot Agreement");
     await fillPilotForm(page);
     await page.getByRole("button", { name: /Preview Pilot Agreement/ }).click();
     await expect(page.getByText("Acme Corp").first()).toBeVisible();
@@ -148,7 +154,7 @@ test.describe("Document form and preview", () => {
 
   test("preview has a Download PDF button", async ({ page }) => {
     await signUp(page);
-    await page.getByRole("button", { name: "Pilot Agreement" }).click();
+    await selectDocument(page, "Pilot Agreement");
     await fillPilotForm(page);
     await page.getByRole("button", { name: /Preview Pilot Agreement/ }).click();
     await expect(page.getByRole("button", { name: /Download PDF/i })).toBeVisible();
@@ -156,7 +162,7 @@ test.describe("Document form and preview", () => {
 
   test("edit button on preview returns to form", async ({ page }) => {
     await signUp(page);
-    await page.getByRole("button", { name: "Pilot Agreement" }).click();
+    await selectDocument(page, "Pilot Agreement");
     await fillPilotForm(page);
     await page.getByRole("button", { name: /Preview Pilot Agreement/ }).click();
     await page.getByRole("button", { name: /← Edit/i }).click();
@@ -171,7 +177,7 @@ test.describe("Document form and preview", () => {
 
   test("submitting without required fields shows validation errors", async ({ page }) => {
     await signUp(page);
-    await page.getByRole("button", { name: "Pilot Agreement" }).click();
+    await selectDocument(page, "Pilot Agreement");
     await page.getByRole("button", { name: /Preview Pilot Agreement/ }).click();
     await expect(page.getByText("Pilot Duration is required")).toBeVisible();
     await expect(page.getByText("Pilot Scope is required")).toBeVisible();
