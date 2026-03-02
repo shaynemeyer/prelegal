@@ -40,19 +40,27 @@ export function DocumentsTable({ docs, loading, error, onEdit, onDeleted }: Docu
   const token = useAuthStore((s) => s.token);
   const [pendingDelete, setPendingDelete] = useState<DocumentRecord | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   async function handleConfirmDelete() {
     if (!pendingDelete) return;
     setDeleting(true);
+    setDeleteError(null);
     try {
       await apiDelete(`/api/documents/${pendingDelete.id}`, token);
       onDeleted(pendingDelete.id);
+      setPendingDelete(null);
     } catch {
-      // silently ignore; row stays in table
+      setDeleteError("Delete failed. Please try again.");
     } finally {
       setDeleting(false);
-      setPendingDelete(null);
     }
+  }
+
+  function handleCancelDelete() {
+    if (deleting) return;
+    setPendingDelete(null);
+    setDeleteError(null);
   }
 
   const columns: ColumnDef<DocumentRecord>[] = [
@@ -147,9 +155,11 @@ export function DocumentsTable({ docs, loading, error, onEdit, onDeleted }: Docu
       {pendingDelete && (
         <DeleteDocumentDialog
           docName={pendingDelete.doc_name}
-          open={!deleting}
+          open={!!pendingDelete}
+          deleting={deleting}
+          error={deleteError}
           onConfirm={handleConfirmDelete}
-          onCancel={() => setPendingDelete(null)}
+          onCancel={handleCancelDelete}
         />
       )}
     </>
