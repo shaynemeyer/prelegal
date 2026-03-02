@@ -8,6 +8,8 @@ import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useDocumentStore } from "@/store/useDocumentStore";
+import { useAuthStore } from "@/store/useAuthStore";
+import { apiPost } from "@/lib/api";
 import { DOC_SCHEMAS } from "@/lib/documentSchemas";
 
 interface DocumentPreviewProps {
@@ -82,8 +84,28 @@ function CoverTable({ docType, docName, fields }: { docType: string; docName: st
 export function DocumentPreview({ templates }: DocumentPreviewProps) {
   const router = useRouter();
   const { docType, docName, fields } = useDocumentStore();
+  const token = useAuthStore((s) => s.token);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  async function handleSave() {
+    if (!docType || !docName || !fields) return;
+    setSaving(true);
+    setSaved(false);
+    setSaveError(null);
+    try {
+      await apiPost("/api/documents", { doc_type: docType, doc_name: docName, fields }, token);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {
+      setSaveError("Save failed. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function handleDownload() {
     if (!docType || !fields) return;
@@ -135,9 +157,16 @@ export function DocumentPreview({ templates }: DocumentPreviewProps) {
         <Button variant="outline" onClick={() => router.push("/")}>
           ← Edit
         </Button>
-        <Button onClick={handleDownload} disabled={isPending}>
-          {isPending ? "Generating…" : "Download PDF"}
-        </Button>
+        <div className="flex items-center gap-2">
+          {saved && <span className="text-sm text-green-600">Saved</span>}
+          {saveError && <span className="text-sm text-destructive">{saveError}</span>}
+          <Button variant="outline" onClick={handleSave} disabled={saving}>
+            {saving ? "Saving..." : "Save"}
+          </Button>
+          <Button onClick={handleDownload} disabled={isPending}>
+            {isPending ? "Generating…" : "Download PDF"}
+          </Button>
+        </div>
       </div>
 
       {error && (

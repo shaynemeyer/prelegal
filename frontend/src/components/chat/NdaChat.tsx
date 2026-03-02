@@ -96,6 +96,9 @@ export function NdaChat() {
   const [ndaData, setNdaData] = useState<PartialNdaData>({});
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const greetedRef = useRef(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -141,6 +144,21 @@ export function NdaChat() {
     setMessages(nextMessages);
     setInput("");
     sendMessage(nextMessages);
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setSaved(false);
+    setSaveError(null);
+    try {
+      await apiPost("/api/documents", { doc_type: "mutual-nda", doc_name: "Mutual NDA", fields: ndaData }, token);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {
+      setSaveError("Save failed. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function handlePreview() {
@@ -193,7 +211,12 @@ export function NdaChat() {
             Send
           </Button>
         </div>
-        <div className="flex justify-end">
+        <div className="flex items-center justify-end gap-2">
+          {saved && <span className="text-sm text-green-600">Saved</span>}
+          {saveError && <span className="text-sm text-destructive">{saveError}</span>}
+          <Button variant="outline" onClick={handleSave} disabled={saving}>
+            {saving ? "Saving..." : "Save"}
+          </Button>
           <Button variant="default" onClick={handlePreview} disabled={!ready}>
             Preview NDA →
           </Button>
