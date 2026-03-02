@@ -58,6 +58,9 @@ export function DocumentChat({ docType, docName }: DocumentChatProps) {
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const greetedRef = useRef(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -111,6 +114,21 @@ export function DocumentChat({ docType, docName }: DocumentChatProps) {
     sendMessage(nextMessages);
   }
 
+  async function saveDocument() {
+    setSaving(true);
+    setSaved(false);
+    setSaveError(null);
+    try {
+      await apiPost("/api/documents", { doc_type: docType, doc_name: docName, fields }, token);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {
+      setSaveError("Save failed. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleDownload() {
     setDownloading(true);
     setDownloadError(null);
@@ -131,7 +149,7 @@ export function DocumentChat({ docType, docName }: DocumentChatProps) {
       setTimeout(() => URL.revokeObjectURL(url), 100);
 
       // Save to document history (best-effort — don't fail download if this errors)
-      apiPost("/api/documents", { doc_type: docType, doc_name: docName, fields }, token).catch(() => {});
+      saveDocument().catch(() => {});
     } catch (e) {
       setDownloadError(e instanceof Error ? e.message : "PDF generation failed");
     } finally {
@@ -190,7 +208,12 @@ export function DocumentChat({ docType, docName }: DocumentChatProps) {
             Send
           </Button>
         </div>
-        <div className="flex justify-end">
+        <div className="flex items-center justify-end gap-2">
+          {saved && <span className="text-sm text-green-600">Saved</span>}
+          {saveError && <span className="text-sm text-destructive">{saveError}</span>}
+          <Button variant="outline" onClick={saveDocument} disabled={saving}>
+            {saving ? "Saving..." : "Save"}
+          </Button>
           <Button variant="default" onClick={handleDownload} disabled={!ready || downloading}>
             {downloading ? "Generating..." : `Download ${docName} PDF`}
           </Button>
