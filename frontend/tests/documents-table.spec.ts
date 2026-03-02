@@ -12,8 +12,13 @@ async function signUpAndGoHome(page: import("@playwright/test").Page) {
   await expect(page).toHaveURL("/");
 }
 
+async function selectDocument(page: import("@playwright/test").Page, name: string) {
+  await page.getByRole("combobox", { name: "Document type" }).click();
+  await page.getByRole("option", { name }).click();
+}
+
 async function saveDocViaChat(page: import("@playwright/test").Page) {
-  await page.getByRole("button", { name: "Pilot Agreement" }).click();
+  await selectDocument(page, "Pilot Agreement");
   await page.getByRole("tab", { name: "Chat with AI" }).click();
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByText("Saved")).toBeVisible({ timeout: 5000 });
