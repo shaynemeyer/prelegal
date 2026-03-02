@@ -5,6 +5,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { DocumentSelector } from "@/components/DocumentSelector";
 import { NdaPageTabs } from "@/components/NdaPageTabs";
 import { DocumentPageTabs } from "@/components/document/DocumentPageTabs";
+import { RecentDocuments } from "@/components/RecentDocuments";
 import { Button } from "@/components/ui/button";
 import { catalog, NDA_DOC_TYPE, type CatalogEntry } from "@/lib/catalog";
 
@@ -37,7 +38,10 @@ export default function HomePage() {
       {selected ? (
         <DocumentCreator entry={selected} onBack={() => setSelected(null)} />
       ) : (
-        <DocumentSelector onSelect={setSelected} />
+        <div className="space-y-8">
+          <DocumentSelector onSelect={setSelected} />
+          <RecentDocuments />
+        </div>
       )}
     </AuthGuard>
   );

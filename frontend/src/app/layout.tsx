@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { AppHeader } from "@/components/AppHeader";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -26,12 +27,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <div className="min-h-screen bg-background">
-          <header className="border-b bg-card">
-            <div className="mx-auto max-w-4xl px-4 py-4">
-              <p className="text-lg font-semibold tracking-tight">Prelegal</p>
-              <p className="text-sm text-muted-foreground">Legal documents, simplified.</p>
-            </div>
-          </header>
+          <AppHeader />
           <main className="mx-auto max-w-4xl px-4 py-8">{children}</main>
         </div>
       </body>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { useAuthStore } from "@/store/useAuthStore";
 import { apiPost } from "@/lib/api";
 import type { ChatMessage, ChatResponse } from "@/types/chat";
@@ -128,6 +129,9 @@ export function DocumentChat({ docType, docName }: DocumentChatProps) {
       a.download = `${docName.toLowerCase().replace(/\s+/g, "-")}.pdf`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 100);
+
+      // Save to document history (best-effort — don't fail download if this errors)
+      apiPost("/api/documents", { doc_type: docType, doc_name: docName, fields }, token).catch(() => {});
     } catch (e) {
       setDownloadError(e instanceof Error ? e.message : "PDF generation failed");
     } finally {
@@ -138,6 +142,8 @@ export function DocumentChat({ docType, docName }: DocumentChatProps) {
   const ready = isReadyToGenerate(fields, docType);
 
   return (
+    <div className="space-y-3">
+    <DisclaimerBanner />
     <div className="flex flex-col h-[600px] border rounded-lg overflow-hidden">
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.map((m, i) => (
@@ -190,6 +196,7 @@ export function DocumentChat({ docType, docName }: DocumentChatProps) {
           </Button>
         </div>
       </div>
+    </div>
     </div>
   );
 }

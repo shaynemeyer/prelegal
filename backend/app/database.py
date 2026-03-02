@@ -14,10 +14,23 @@ CREATE TABLE IF NOT EXISTS users (
 )
 """
 
+CREATE_DOCUMENTS_TABLE = """
+CREATE TABLE IF NOT EXISTS documents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    doc_type TEXT NOT NULL,
+    doc_name TEXT NOT NULL,
+    fields_json TEXT NOT NULL DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+)
+"""
+
 
 async def init_db() -> None:
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute(CREATE_USERS_TABLE)
+        await db.execute(CREATE_DOCUMENTS_TABLE)
         await db.commit()
 
 

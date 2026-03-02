@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { useNdaStore } from "@/store/useNdaStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { apiPost } from "@/lib/api";
@@ -150,6 +151,8 @@ export function NdaChat() {
   const ready = isReadyForPreview(ndaData);
 
   return (
+    <div className="space-y-3">
+    <DisclaimerBanner />
     <div className="flex flex-col h-[600px] border rounded-lg overflow-hidden">
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.map((m, i) => (
@@ -196,6 +199,7 @@ export function NdaChat() {
           </Button>
         </div>
       </div>
+    </div>
     </div>
   );
 }

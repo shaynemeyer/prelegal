@@ -2,7 +2,7 @@
 
 ## Overview
 
-SaaS product for drafting legal agreements from templates. Available documents are in `catalog.json`. Currently supports Mutual NDA generation only.
+SaaS product for drafting legal agreements from templates. Available documents are in `catalog.json`. Supports 12 document types: Mutual NDA (with form + AI chat tabs), and 11 others (CSA, SLA, Design Partner Agreement, PSA, DPA, Partnership Agreement, Software License Agreement, Pilot Agreement, BAA, AI Addendum, Mutual NDA Cover Page) via AI chat + PDF generation.
 
 ## Development process
 
