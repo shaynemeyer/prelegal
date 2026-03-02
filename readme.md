@@ -29,12 +29,13 @@ A dataset of 12 open-source legal agreement templates sourced from [Common Paper
 
 A full-stack web app for generating legal documents from any supported template:
 
-1. **Sign up / sign in** — JWT-authenticated accounts
-2. **Select a document type** — choose from all 11 supported document types
+1. **Sign up / sign in** — JWT-authenticated accounts with sign-out in the header
+2. **Select a document type** — choose from all 12 supported document types
 3. **Fill in a form or chat with AI** — every document type offers both a structured form (default) and an AI chat tab
 4. **Preview and download** — submitting the form shows a preview with the cover page and standard terms; download as PDF from the preview
+5. **Document history** — previously generated documents appear on the home page and can be re-downloaded at any time
 
-The AI assistant knows the fields required for each document type, always asks follow-up questions when more information is needed, and gracefully handles requests for unsupported document types by explaining alternatives.
+The AI assistant knows the fields required for each document type, always asks follow-up questions when more information is needed, and gracefully handles requests for unsupported document types by explaining alternatives. All generated documents show a disclaimer that they are AI-generated drafts subject to legal review.
 
 ## Stack
 
@@ -114,7 +115,7 @@ bun dev
 
 ```bash
 # Backend (from backend/)
-uv run pytest --cov=app --cov-report=term-missing   # 99% coverage, 142 tests
+uv run pytest --cov=app --cov-report=term-missing   # 99% coverage, 150 tests
 
 # Frontend (from frontend/)
 bun playwright test                                  # 41 e2e tests
@@ -128,7 +129,8 @@ See [`docs/test-coverage-report.md`](docs/test-coverage-report.md) for full cove
 - [x] V1 foundation: Docker, SQLite, JWT auth, start/stop scripts
 - [x] Mutual NDA creator (form → preview → PDF download)
 - [x] AI chat for NDA drafting (freeform chat auto-fills the form)
-- [x] Backend tests (99% coverage, 142 tests) and frontend e2e tests (41 flows)
-- [x] All 11 document types supported via AI-guided chat + PDF generation
-- [ ] Document persistence
+- [x] All 12 document types supported via AI-guided chat + PDF generation
+- [x] Multi-user support: document history, sign-out, legal disclaimer (PL-7)
+- [x] Backend tests (99% coverage, 150 tests) and frontend e2e tests (41 flows)
+- [ ] Session timeout after 30 min inactivity (PL-8)
 - [ ] Release

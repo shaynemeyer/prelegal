@@ -1,6 +1,6 @@
 # Test Coverage Report
 
-**Generated:** 2026-03-01
+**Generated:** 2026-03-01 (updated after PL-7)
 **Backend:** `uv run pytest --cov=app --cov-report=term-missing`
 **Frontend:** `bun playwright test` (Playwright e2e, 41 tests)
 
@@ -10,7 +10,7 @@
 
 | Layer | Tests | Passing | Coverage |
 | --- | --- | --- | --- |
-| Backend (pytest) | 142 | 142 | 99% |
+| Backend (pytest) | 150 | 150 | 99% |
 | Frontend (Playwright e2e) | 41 | 41 | All user flows covered |
 
 Backend is at 99%. The remaining 1% (5 statements in `main.py`) is the JWT warning branch inside the ASGI lifespan and the StaticFiles mount — both require environment setup outside the test runner.
@@ -23,12 +23,12 @@ Backend is at 99%. The remaining 1% (5 statements in `main.py`) is the JWT warni
 app/ai.py                          100%   (28/28 stmts)
 app/auth.py                        100%   (22/22 stmts)
 app/config.py                      100%   (11/11 stmts)
-app/database.py                    100%   (13/13 stmts)
+app/database.py                    100%   (15/15 stmts)
 app/logger.py                      100%   (12/12 stmts)
 app/routes/__init__.py             100%
 app/routes/auth.py                 100%   (35/35 stmts)
 app/routes/chat.py                 100%   (20/20 stmts)
-app/routes/document.py             100%   (16/16 stmts)
+app/routes/document.py             100%   (42/42 stmts)
 app/routes/health.py               100%    (5/5 stmts)
 app/routes/nda.py                  100%   (28/28 stmts)
 app/routes/root.py                 100%    (5/5 stmts)
@@ -38,24 +38,23 @@ app/services/pdf_service.py        100%   (51/51 stmts)
 app/services/pdf_utils.py          100%    (9/9 stmts)
 app/main.py                         83%   miss: lines 21-24, 47
 ─────────────────────────────────────────
-TOTAL                               99%   (329/334 stmts)
+TOTAL                               99%   (357/362 stmts)
 ```
 
 ### Coverage by test file
 
 ```mermaid
-pie title Backend test distribution (142 tests)
+pie title Backend test distribution (150 tests)
+    "AI module" : 38
+    "Document service helpers" : 35
+    "PDF service helpers" : 30
+    "Document routes" : 14
     "Auth routes" : 8
     "Auth utilities" : 8
-    "Database init" : 3
-    "PDF service helpers" : 30
-    "PDF utils" : 3
+    "Chat routes" : 7
+    "Database init" : 4
     "NDA routes" : 3
-    "Document service helpers" : 28
-    "Document routes" : 3
-    "Chat routes" : 8
-    "AI module" : 22
-    "Other" : 26
+    "PDF utils" : 3
 ```
 
 ### Module coverage heatmap
@@ -225,10 +224,11 @@ These are infrastructure concerns rather than application logic and are not wort
 | Send button state (disabled/enabled) | Covered | |
 | Preview NDA button disabled initially | Covered | |
 | Tab switching works | Covered | |
+| **Logout / sign-out flow** | **Not covered** | AppHeader sign-out button added in PL-7 but no Playwright test |
+| **Recent Documents section** | **Not covered** | RecentDocuments component added in PL-7; requires a completed download to populate |
 | **PDF download completes** | **Not covered** | Requires backend running with Playwright Chromium |
 | **AI fills form fields via chat** | **Not covered** | Requires live OpenRouter API key |
 | **Token expiry / re-login** | **Not covered** | JWT expiry not simulated |
-| **Logout** | **Not covered** | No logout UI exists yet |
 
 ---
 
@@ -237,9 +237,9 @@ These are infrastructure concerns rather than application logic and are not wort
 ```mermaid
 xychart-beta
     title "Backend total coverage progress (%)"
-    x-axis ["Before PL-4", "After PL-4 (v1)", "After PL-5", "After PL-6 (Playwright migration)", "Now (142 tests)"]
+    x-axis ["Before PL-4", "After PL-4 (v1)", "After PL-5", "After PL-6", "After PL-6 (142 tests)", "After PL-7 (150 tests)"]
     y-axis "Total coverage (%)" 70 --> 100
-    line [79, 92, 93, 89, 99]
+    line [79, 92, 93, 89, 99, 99]
 ```
 
 ---
@@ -252,13 +252,13 @@ graph TD
         C[conftest.py<br/>AsyncClient fixture<br/>isolated SQLite DB]
         T1[test_auth_utils.py<br/>hash, verify, JWT, logger]
         T2[test_auth_routes.py<br/>signup, login, health, root]
-        T3[test_database.py<br/>init, columns, idempotent]
+        T3[test_database.py<br/>users table, documents table,<br/>columns, idempotent]
         T4[test_pdf_service.py<br/>30 tests: helpers + generate_nda_pdf]
         T4b[test_pdf_utils.py<br/>3 tests: html_to_pdf mocked]
         T5[test_chat_routes.py<br/>auth, doc_type, messages]
         T6[test_ai.py<br/>call_ai, per-doc prompts]
         T7[test_document_service.py<br/>cover HTML, template files, generate_document_pdf]
-        T8[test_document_routes.py<br/>generate-pdf endpoint]
+        T8[test_document_routes.py<br/>generate-pdf, save, list, auth enforcement]
         T9[test_nda_routes.py<br/>3 tests: generate-pdf endpoint]
         C --> T1 & T2 & T3 & T5 & T6 & T7 & T8 & T9
     end
