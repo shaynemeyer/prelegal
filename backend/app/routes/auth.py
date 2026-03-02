@@ -1,7 +1,7 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
 
-from app.auth import create_access_token, hash_password, verify_password
+from app.auth import create_access_token, get_current_user, hash_password, verify_password
 from app.database import get_db
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -53,4 +53,15 @@ async def login(body: LoginRequest) -> TokenResponse:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     token = create_access_token(user_id=user[0], email=body.email)
+    return TokenResponse(access_token=token)
+
+
+@router.post("/refresh", response_model=TokenResponse)
+async def refresh(user: dict = Depends(get_current_user)) -> TokenResponse:
+    """Issue a new token for an authenticated user (extends an active session)."""
+    async with get_db() as db:
+        row = await db.execute("SELECT id FROM users WHERE id = ?", (int(user["sub"]),))
+        if not await row.fetchone():
+            raise HTTPException(status_code=401, detail="User not found")
+    token = create_access_token(user_id=int(user["sub"]), email=user["email"])
     return TokenResponse(access_token=token)

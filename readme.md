@@ -115,10 +115,10 @@ bun dev
 
 ```bash
 # Backend (from backend/)
-uv run pytest --cov=app --cov-report=term-missing   # 99% coverage, 150 tests
+uv run pytest --cov=app --cov-report=term-missing   # 99% coverage, 155 tests
 
 # Frontend (from frontend/)
-bun playwright test                                  # 41 e2e tests
+bun playwright test                                  # 42 e2e tests
 ```
 
 See [`docs/test-coverage-report.md`](docs/test-coverage-report.md) for full coverage details and gap analysis.
@@ -131,6 +131,6 @@ See [`docs/test-coverage-report.md`](docs/test-coverage-report.md) for full cove
 - [x] AI chat for NDA drafting (freeform chat auto-fills the form)
 - [x] All 12 document types supported via AI-guided chat + PDF generation
 - [x] Multi-user support: document history, sign-out, legal disclaimer (PL-7)
-- [x] Backend tests (99% coverage, 150 tests) and frontend e2e tests (41 flows)
-- [ ] Session timeout after 30 min inactivity (PL-8)
+- [x] Session timeout: 10-min inactivity logout, JWT refresh endpoint (PL-8)
+- [x] Backend tests (99% coverage, 155 tests) and frontend e2e tests (42 flows)
 - [ ] Release

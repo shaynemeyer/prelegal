@@ -8,7 +8,7 @@ Next.js (TypeScript) frontend for the Prelegal legal document platform. Statical
 | --------- | ---------------------------------------------------------- |
 | Framework | Next.js 16 + TypeScript (`output: 'export'`)               |
 | UI        | shadcn/ui + Tailwind CSS                                   |
-| State     | Zustand (auth token in localStorage, NDA form in memory)   |
+| State     | Zustand (auth token in localStorage, session timeout hook) |
 | Forms     | react-hook-form + Zod                                      |
 | API       | Direct `fetch` to FastAPI — no tRPC, no Next.js API routes |
 
@@ -39,14 +39,15 @@ The `out/` directory is copied into the Docker image and served by FastAPI via `
 
 ## Routes
 
-| Route      | Description                                 |
-| ---------- | ------------------------------------------- |
-| `/login`   | Sign in with email + password               |
-| `/signup`  | Create an account                           |
-| `/`        | Mutual NDA form (auth-protected)            |
-| `/preview` | NDA preview + PDF download (auth-protected) |
+| Route         | Auth | Description                                         |
+| ------------- | ---- | --------------------------------------------------- |
+| `/login`      |      | Sign in with email + password                       |
+| `/signup`     |      | Create an account                                   |
+| `/`           | JWT  | Document selector + recent history                  |
+| `/preview`    | JWT  | NDA preview + PDF download                          |
+| `/doc-preview`| JWT  | Non-NDA document preview + PDF download             |
 
-Auth-protected routes redirect to `/login` if no JWT is present in localStorage (`AuthGuard` component).
+Auth-protected routes redirect to `/login` if no JWT is present in localStorage (`AuthGuard` component). Users are also automatically logged out after **10 minutes of inactivity** via the `useInactivityTimeout` hook.
 
 ## Testing
 
@@ -54,4 +55,4 @@ Auth-protected routes redirect to `/login` if no JWT is present in localStorage 
 bun playwright test
 ```
 
-19 Playwright e2e tests in `tests/`. See [`../docs/test-coverage-report.md`](../docs/test-coverage-report.md) for details.
+42 Playwright e2e tests in `tests/`. See [`../docs/test-coverage-report.md`](../docs/test-coverage-report.md) for details.

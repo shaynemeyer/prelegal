@@ -3,6 +3,27 @@ import { test, expect } from "@playwright/test";
 const email = () => `test_${Date.now()}@example.com`;
 const password = "TestPass123";
 
+test.describe("Inactivity timeout", () => {
+  test("user is redirected to /login after inactivity timeout", async ({ page }) => {
+    // Set a short inactivity timeout (1.5s) before any page script runs.
+    await page.addInitScript(() => {
+      (window as Window & { __INACTIVITY_TIMEOUT_MS?: number }).__INACTIVITY_TIMEOUT_MS = 1500;
+    });
+
+    const e = email();
+    await page.goto("/signup");
+    await page.getByLabel("Email").fill(e);
+    await page.getByLabel("Password").fill(password);
+    await page.getByRole("button", { name: "Create account" }).click();
+    await expect(page).toHaveURL("/");
+
+    // Wait longer than the inactivity timeout without triggering any activity.
+    await page.waitForTimeout(2500);
+
+    await expect(page).toHaveURL(/\/login/);
+  });
+});
+
 test.describe("Auth redirect", () => {
   test("unauthenticated user visiting / is redirected to /login", async ({ page }) => {
     // Clear storage via storageState by navigating first to a reachable page

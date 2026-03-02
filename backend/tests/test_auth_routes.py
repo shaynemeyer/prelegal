@@ -1,4 +1,10 @@
+from datetime import datetime, timedelta, timezone
+
 import pytest
+from jose import jwt
+
+from app.auth import create_access_token
+from app.config import JWT_ALGORITHM, JWT_SECRET_KEY
 
 
 @pytest.mark.asyncio
@@ -60,3 +66,53 @@ async def test_root_returns_api_message(client):
     res = await client.get("/")
     assert res.status_code == 200
     assert res.json()["message"] == "Prelegal API"
+
+
+@pytest.mark.asyncio
+async def test_refresh_returns_new_token(client):
+    res = await client.post("/api/auth/signup", json={"email": "refresh@example.com", "password": "pass123"})
+    token = res.json()["access_token"]
+
+    res = await client.post("/api/auth/refresh", headers={"Authorization": f"Bearer {token}"})
+    assert res.status_code == 200
+    data = res.json()
+    assert "access_token" in data
+    assert len(data["access_token"].split(".")) == 3  # valid JWT structure
+
+
+@pytest.mark.asyncio
+async def test_refresh_without_token_returns_401(client):
+    res = await client.post("/api/auth/refresh")
+    assert res.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_refresh_with_invalid_token_returns_401(client):
+    res = await client.post("/api/auth/refresh", headers={"Authorization": "Bearer invalid.token.here"})
+    assert res.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_refresh_with_expired_token_returns_401(client):
+    expired_payload = {
+        "sub": "999",
+        "email": "expired@example.com",
+        "exp": datetime.now(timezone.utc) - timedelta(seconds=1),
+    }
+    expired_token = jwt.encode(expired_payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+    res = await client.post("/api/auth/refresh", headers={"Authorization": f"Bearer {expired_token}"})
+    assert res.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_refresh_for_deleted_user_returns_401(client):
+    # Token is valid but the user no longer exists in the DB (sub=99999)
+    ghost_payload = {
+        "sub": "99999",
+        "email": "ghost@example.com",
+        "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+    }
+    ghost_token = jwt.encode(ghost_payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+    res = await client.post("/api/auth/refresh", headers={"Authorization": f"Bearer {ghost_token}"})
+    assert res.status_code == 401
+    assert res.json()["detail"] == "User not found"
