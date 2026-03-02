@@ -102,3 +102,17 @@ async def test_refresh_with_expired_token_returns_401(client):
     expired_token = jwt.encode(expired_payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
     res = await client.post("/api/auth/refresh", headers={"Authorization": f"Bearer {expired_token}"})
     assert res.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_refresh_for_deleted_user_returns_401(client):
+    # Token is valid but the user no longer exists in the DB (sub=99999)
+    ghost_payload = {
+        "sub": "99999",
+        "email": "ghost@example.com",
+        "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+    }
+    ghost_token = jwt.encode(ghost_payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+    res = await client.post("/api/auth/refresh", headers={"Authorization": f"Bearer {ghost_token}"})
+    assert res.status_code == 401
+    assert res.json()["detail"] == "User not found"

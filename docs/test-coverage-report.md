@@ -1,8 +1,8 @@
 # Test Coverage Report
 
-**Generated:** 2026-03-01 (updated after PL-7)
+**Generated:** 2026-03-01 (updated after PL-8)
 **Backend:** `uv run pytest --cov=app --cov-report=term-missing`
-**Frontend:** `bun playwright test` (Playwright e2e, 41 tests)
+**Frontend:** `bun playwright test` (Playwright e2e, 42 tests)
 
 ---
 
@@ -10,8 +10,8 @@
 
 | Layer | Tests | Passing | Coverage |
 | --- | --- | --- | --- |
-| Backend (pytest) | 150 | 150 | 99% |
-| Frontend (Playwright e2e) | 41 | 41 | All user flows covered |
+| Backend (pytest) | 155 | 155 | 99% |
+| Frontend (Playwright e2e) | 42 | 42 | All user flows covered |
 
 Backend is at 99%. The remaining 1% (5 statements in `main.py`) is the JWT warning branch inside the ASGI lifespan and the StaticFiles mount — both require environment setup outside the test runner.
 
@@ -26,7 +26,7 @@ app/config.py                      100%   (11/11 stmts)
 app/database.py                    100%   (15/15 stmts)
 app/logger.py                      100%   (12/12 stmts)
 app/routes/__init__.py             100%
-app/routes/auth.py                 100%   (35/35 stmts)
+app/routes/auth.py                 100%   (43/43 stmts)
 app/routes/chat.py                 100%   (20/20 stmts)
 app/routes/document.py             100%   (42/42 stmts)
 app/routes/health.py               100%    (5/5 stmts)
@@ -38,18 +38,18 @@ app/services/pdf_service.py        100%   (51/51 stmts)
 app/services/pdf_utils.py          100%    (9/9 stmts)
 app/main.py                         83%   miss: lines 21-24, 47
 ─────────────────────────────────────────
-TOTAL                               99%   (357/362 stmts)
+TOTAL                               99%   (365/370 stmts)
 ```
 
 ### Coverage by test file
 
 ```mermaid
-pie title Backend test distribution (150 tests)
+pie title Backend test distribution (155 tests)
     "AI module" : 38
     "Document service helpers" : 35
     "PDF service helpers" : 30
     "Document routes" : 14
-    "Auth routes" : 8
+    "Auth routes" : 13
     "Auth utilities" : 8
     "Chat routes" : 7
     "Database init" : 4
@@ -89,11 +89,11 @@ xychart-beta
 
 ## Frontend Coverage (Playwright e2e)
 
-41 tests across 3 spec files cover all primary user flows.
+42 tests across 3 spec files cover all primary user flows.
 
 ```mermaid
-pie title Frontend test distribution (41 tests)
-    "Auth redirects" : 2
+pie title Frontend test distribution (42 tests)
+    "Auth redirects & inactivity" : 3
     "Signup" : 4
     "Login" : 4
     "Document selector" : 6
@@ -109,6 +109,7 @@ flowchart TD
     A([Unauthenticated visitor]) -->|GET slash| B{AuthGuard}
     B -->|no token| C["/login"]
     B -->|has token| D["Home / Document Selector"]
+    B -->|10 min inactivity| C
 
     C -->|fill form| E{Submit}
     E -->|invalid creds| F[error message]
@@ -224,11 +225,11 @@ These are infrastructure concerns rather than application logic and are not wort
 | Send button state (disabled/enabled) | Covered | |
 | Preview NDA button disabled initially | Covered | |
 | Tab switching works | Covered | |
+| Inactivity timeout → `/login` | Covered | `addInitScript` sets 1.5 s timeout; PL-8 |
 | **Logout / sign-out flow** | **Not covered** | AppHeader sign-out button added in PL-7 but no Playwright test |
 | **Recent Documents section** | **Not covered** | RecentDocuments component added in PL-7; requires a completed download to populate |
 | **PDF download completes** | **Not covered** | Requires backend running with Playwright Chromium |
 | **AI fills form fields via chat** | **Not covered** | Requires live OpenRouter API key |
-| **Token expiry / re-login** | **Not covered** | JWT expiry not simulated |
 
 ---
 
@@ -237,9 +238,9 @@ These are infrastructure concerns rather than application logic and are not wort
 ```mermaid
 xychart-beta
     title "Backend total coverage progress (%)"
-    x-axis ["Before PL-4", "After PL-4 (v1)", "After PL-5", "After PL-6", "After PL-6 (142 tests)", "After PL-7 (150 tests)"]
+    x-axis ["Before PL-4", "After PL-4 (v1)", "After PL-5", "After PL-6", "After PL-6 (142 tests)", "After PL-7 (150 tests)", "After PL-8 (155 tests)"]
     y-axis "Total coverage (%)" 70 --> 100
-    line [79, 92, 93, 89, 99, 99]
+    line [79, 92, 93, 89, 99, 99, 99]
 ```
 
 ---
@@ -251,7 +252,7 @@ graph TD
     subgraph Backend ["Backend (pytest + httpx AsyncClient)"]
         C[conftest.py<br/>AsyncClient fixture<br/>isolated SQLite DB]
         T1[test_auth_utils.py<br/>hash, verify, JWT, logger]
-        T2[test_auth_routes.py<br/>signup, login, health, root]
+        T2[test_auth_routes.py<br/>signup, login, refresh, health, root]
         T3[test_database.py<br/>users table, documents table,<br/>columns, idempotent]
         T4[test_pdf_service.py<br/>30 tests: helpers + generate_nda_pdf]
         T4b[test_pdf_utils.py<br/>3 tests: html_to_pdf mocked]
@@ -264,7 +265,7 @@ graph TD
     end
 
     subgraph Frontend ["Frontend (Playwright e2e)"]
-        P1[auth.spec.ts<br/>redirects, signup, login]
+        P1[auth.spec.ts<br/>redirects, inactivity timeout, signup, login]
         P2[nda.spec.ts<br/>form, validation, preview]
         P3[chat.spec.ts<br/>doc selector, chat UI, buttons, doc-preview]
     end
