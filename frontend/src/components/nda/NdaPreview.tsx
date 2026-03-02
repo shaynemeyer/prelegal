@@ -7,7 +7,10 @@ import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { useNdaStore } from "@/store/useNdaStore";
+import { useAuthStore } from "@/store/useAuthStore";
+import { apiPost } from "@/lib/api";
 import type { NdaFormData } from "@/lib/schemas/nda";
 
 interface NdaPreviewProps {
@@ -124,6 +127,7 @@ function CoverPageTable({ data }: { data: NdaFormData }) {
 export function NdaPreview({ standardTerms }: NdaPreviewProps) {
   const router = useRouter();
   const formData = useNdaStore((s) => s.formData);
+  const token = useAuthStore((s) => s.token);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -174,6 +178,9 @@ export function NdaPreview({ standardTerms }: NdaPreviewProps) {
       a.download = "mutual-nda.pdf";
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 100);
+
+      // Save to document history using the same snake_case payload the generate endpoint accepted
+      apiPost("/api/documents", { doc_type: "mutual-nda", doc_name: "Mutual NDA", fields: payload }, token).catch(() => {});
     } catch (e) {
       setError(e instanceof Error ? e.message : "PDF generation failed");
     } finally {
@@ -194,6 +201,8 @@ export function NdaPreview({ standardTerms }: NdaPreviewProps) {
 
   return (
     <div className="space-y-8">
+      <DisclaimerBanner />
+
       <div className="flex items-center justify-between">
         <Button variant="outline" onClick={() => router.push("/")}>
           ← Edit

@@ -21,3 +21,17 @@ export async function apiPost<T>(
 
   return res.json();
 }
+
+export async function apiGet<T>(path: string, token?: string | null): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}${path}`, { headers });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: "Request failed" }));
+    throw new Error(err.detail ?? "Request failed");
+  }
+
+  return res.json();
+}
