@@ -6,6 +6,8 @@ Prelegal is a legal document platform that helps users create, preview, and down
 
 ## What's been built
 
+![Prelegal Home](docs/prelegal-01.png)
+
 ### Legal document templates (`templates/`)
 
 A dataset of 12 open-source legal agreement templates sourced from [Common Paper](https://commonpaper.com), created by a committee of 40+ attorneys. Licensed under CC BY 4.0.
