@@ -4,7 +4,8 @@
 
 Prelegal is a legal document platform that helps users create, preview, and download standard legal agreements without a lawyer.
 
-> [!WARNING] This is not a replacement for legal advice
+> [!WARNING]
+> This is not a replacement for legal advice.  
 > Always seek counsel from an attorney and have them review these documents.  
 > This is NOT a subsitute for good legal advice.
 
